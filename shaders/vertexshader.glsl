@@ -1,6 +1,8 @@
 #version 450 core
 
-layout(location = 0) in vec3 position;
+layout(location = 0) in vec3 positions;
+layout(location = 1) in vec3 normals;
+layout(location = 2) in vec2 texCoords;
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -10,12 +12,14 @@ vec3 hsv2rgb(vec3 c)
 }
 
 out vec3 vColor;
+uniform float time;
 
 void main()
 {
     float hue = float(gl_VertexID) / 4.0;
 
-    vColor = hsv2rgb(vec3(hue, 1.0, 1.0));
+    //vColor = hsv2rgb(vec3(hue, 1.0, 1.0));
+   vColor = normals;
 
-    gl_Position = vec4(position.x, position.y, position.z, 1.0);
+    gl_Position = vec4(positions.x + sin(time), positions.y, positions.z, 1.0);
 }

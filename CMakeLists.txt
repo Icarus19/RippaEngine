@@ -20,7 +20,14 @@ target_include_directories(glad PUBLIC
     third_party/glad/include
 )
 
-add_executable(RippaEngine src/main.cpp)
+add_executable(RippaEngine
+        src/main.cpp
+        src/assets/ImageLoader.cpp
+)
+
+target_include_directories(RippaEngine PRIVATE
+        third_party/stb_image
+)
 
 target_link_libraries(RippaEngine PRIVATE
         glad

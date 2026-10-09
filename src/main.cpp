@@ -2,8 +2,12 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
+#include "assets/ImageLoader.h"
+#include <stb_image.h>
+
+// TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
 std::string LoadShaderSource(const char* path);
@@ -95,17 +99,27 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     
-    // TEMP: vertex data and indices
+    // TEMP: vertex data and indices this makes a square
+    // We will use 3 attributes, position, normals and texcoord
     float vertices[] = {
-        0.5f, 0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        -0.5f, 0.5f, 0.0f,
+        0.5f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+        0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+        -0.5f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
     };
     unsigned int indices[] = {
         0, 1, 3,
         1, 2, 3,
     };
+    // TEMP: this is just one triangle
+    /*float vertices[] = {
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+        0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f,
+    };
+    unsigned int indices[] = {
+       0, 1, 2,
+    };*/
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -117,10 +131,20 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
     
     // VBO and VAO can be safely unbound at this point, but not the EBO
+    
+    // Load images
+    ImageData image = ImageLoader::Load("./assets/badApple/output_0300.jpg");
+    
+    // Bind image
+    unsigned int data* = 
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
@@ -134,6 +158,11 @@ int main()
         
         // shader
         glUseProgram(shaderProgram);
+        
+        // update uniforms
+        int timeUniform = glGetUniformLocation(shaderProgram, "time");
+        glUniform1f(timeUniform, glfwGetTime());
+        
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         
         glfwSwapBuffers(window);
