@@ -8,7 +8,7 @@ struct ImageData
     int height = 0;
     int channels = 0;
     
-    unsigned char* pixels = nullptr;
+    unsigned char* data = nullptr;
 };
 
 class ImageLoader

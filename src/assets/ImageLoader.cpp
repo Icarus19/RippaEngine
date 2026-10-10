@@ -8,7 +8,7 @@ ImageData ImageLoader::Load(const std::string& path)
 {
     ImageData image;
     
-    image.pixels = stbi_load(
+    image.data = stbi_load(
         path.c_str(),    
         &image.width,
         &image.height,
@@ -16,7 +16,7 @@ ImageData ImageLoader::Load(const std::string& path)
         0
     );
     
-    if (image.pixels == nullptr)
+    if (image.data == nullptr)
     {
         std::cerr << "Failed to load image from path: " << path << '\n';
         std::cerr << "Reason: " << stbi_failure_reason() << '\n';

@@ -13,9 +13,12 @@
 std::string LoadShaderSource(const char* path);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+float zoom = 0.0f;
 
 // Usually main has to be last, but because we declare our functions at the top we can define main first
 int main()
@@ -140,28 +143,71 @@ int main()
     
     // VBO and VAO can be safely unbound at this point, but not the EBO
     
-    // Load images
-    ImageData image = ImageLoader::Load("./assets/badApple/output_0300.jpg");
+    // Generate and bind texture
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    // Bind image
-    unsigned int data* = 
+    // Load images
+    stbi_set_flip_vertically_on_load(true); // Why is thing even a thing?
+    ImageData image = ImageLoader::Load("./assets/badApple/output_0300.jpg");
+    if (image.data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }else{
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(image.data);
+    
+    // Second image
+    unsigned int texture1;
+    glGenTextures(1, &texture1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    ImageData image1 = ImageLoader::Load("./assets/badApple/output_4900.jpg");
+    if (image1.data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image1.width, image1.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image1.data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(image1.data);
+    
+    // Set second texture as uniform because the first one is automatic
+    glUseProgram(shaderProgram); // Set shader before any uniforms are set
+    // Static uniforms can be bound to a program before the loop
+    // Changing program doesn't unbind any uniforms so we can change freely
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
+    
+    int timeUniform = glGetUniformLocation(shaderProgram, "time");
+    int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
     {
         // input
         processInput(window);
+        glfwSetKeyCallback(window, key_callback);
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        // shader
-        glUseProgram(shaderProgram);
-        
         // update uniforms
-        int timeUniform = glGetUniformLocation(shaderProgram, "time");
         glUniform1f(timeUniform, glfwGetTime());
+        glUniform1f(zoomUniform, zoom);
         
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         
@@ -204,4 +250,12 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    if (key == GLFW_KEY_UP && action == GLFW_REPEAT && zoom < 1.0f)
+        zoom += 0.1f;
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && zoom > 0.0f)
+        zoom -= 0.1f;
 }

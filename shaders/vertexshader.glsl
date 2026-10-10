@@ -1,8 +1,8 @@
 #version 450 core
 
-layout(location = 0) in vec3 positions;
-layout(location = 1) in vec3 normals;
-layout(location = 2) in vec2 texCoords;
+layout(location = 0) in vec3 aPositions;
+layout(location = 1) in vec3 aNormals;
+layout(location = 2) in vec2 aTexCoords;
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -11,15 +11,17 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.www, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-out vec3 vColor;
+out vec3 Color;
+out vec2 TexCoord;
 uniform float time;
 
 void main()
 {
     float hue = float(gl_VertexID) / 4.0;
 
-    //vColor = hsv2rgb(vec3(hue, 1.0, 1.0));
-   vColor = normals;
+    Color = hsv2rgb(vec3(hue, 1.0, 1.0));
+    //Color = aNormals;
+    TexCoord = aTexCoords;
 
-    gl_Position = vec4(positions.x + sin(time), positions.y, positions.z, 1.0);
+    gl_Position = vec4(aPositions.x + sin(time), aPositions.y, aPositions.z, 1.0);
 }
