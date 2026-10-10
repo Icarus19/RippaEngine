@@ -6,6 +6,9 @@
 #include "GLFW/glfw3.h"
 #include "assets/ImageLoader.h"
 #include <stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
@@ -123,6 +126,7 @@ int main()
     unsigned int indices[] = {
        0, 1, 2,
     };*/
+    
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -193,6 +197,12 @@ int main()
     
     int timeUniform = glGetUniformLocation(shaderProgram, "time");
     int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
+    int transformUniform = glGetUniformLocation(shaderProgram, "transform");
+    int moveUniform = glGetUniformLocation(shaderProgram, "move");
+    
+    // Transforms
+    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat4 transform = glm::mat4(1.0f);
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
@@ -200,16 +210,33 @@ int main()
         // input
         processInput(window);
         glfwSetKeyCallback(window, key_callback);
+        float time = glfwGetTime();
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
+        // update matrix
+        
+        glm::mat4 transform = glm::mat4(1.0f); // Reset matrix to identity
+        transform = glm::rotate(transform, time, glm::vec3(0.0, 1.0, 0.0));
+        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        
         // update uniforms
-        glUniform1f(timeUniform, glfwGetTime());
+        glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, zoom);
+        glUniformMatrix4fv(transformUniform, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniform1i(moveUniform, 1);
         
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
+        transform = glm::mat4(1.0f);
+        transform = glm::translate(transform, glm::vec3(-0.5f, 0.5f, 0.0f));
+        glUniformMatrix4fv(transformUniform, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniform1i(moveUniform, 0);
+        
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
         
         glfwSwapBuffers(window);
         glfwPollEvents();

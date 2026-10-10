@@ -14,6 +14,8 @@ vec3 hsv2rgb(vec3 c)
 out vec3 Color;
 out vec2 TexCoord;
 uniform float time;
+uniform mat4 transform;
+uniform bool move;
 
 void main()
 {
@@ -22,6 +24,8 @@ void main()
     Color = hsv2rgb(vec3(hue, 1.0, 1.0));
     //Color = aNormals;
     TexCoord = aTexCoords;
-
-    gl_Position = vec4(aPositions.x + sin(time), aPositions.y, aPositions.z, 1.0);
+    if(!move)
+        gl_Position = transform * vec4(aPositions.x + sin(time), aPositions.y, aPositions.z, 1.0);
+    else
+        gl_Position = transform * vec4(aPositions, 1.0);
 }
