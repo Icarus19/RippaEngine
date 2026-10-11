@@ -20,6 +20,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+const float SCR_NEAR = 0.1f;
+const float SCR_FAR = 100.0f;
+const unsigned int SCR_FOV = 45;
 
 float zoom = 0.0f;
 
@@ -107,7 +110,7 @@ int main()
     
     // TEMP: vertex data and indices this makes a square
     // We will use 3 attributes, position, normals and texcoord
-    float vertices[] = {
+    /*float vertices[] = {
         0.5f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
         0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
         -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
@@ -116,7 +119,7 @@ int main()
     unsigned int indices[] = {
         0, 1, 3,
         1, 2, 3,
-    };
+    };*/
     // TEMP: this is just one triangle
     /*float vertices[] = {
         -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
@@ -126,6 +129,70 @@ int main()
     unsigned int indices[] = {
        0, 1, 2,
     };*/
+    // TEMP: Box
+    float vertices[] = {
+        // Position             Normal              TexCoord
+        // Front
+        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f,      0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+        0.5f,  0.5f, 0.5f,      0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f, 0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+        // Back
+        0.5f, -0.5f, -0.5f,     0.0f, 0.0f, -1.0f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,     0.0f, 0.0f, -1.0f,  0.0f, 1.0f,
+        // Left
+        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+        -0.5f,  0.5f, 0.5f,     -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+        // Right
+        0.5f, -0.5f, 0.5f,      1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+        0.5f,  0.5f, 0.5f,      1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+        // Top
+        -0.5f, 0.5f, 0.5f,      0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+        0.5f, 0.5f, 0.5f,       0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,     0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+        // Bottom
+        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     0.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+        0.5f,  -0.5f, 0.5f,     0.0f, -1.0f, 0.0f,  1.0f, 1.0f,
+        -0.5f,  -0.5f, 0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 1.0f,
+        
+    };
+    unsigned int indices[] = {
+        // Front
+        0, 1, 2,    0, 2, 3,
+        // Back
+        4, 5, 6,    4, 6, 7,
+        // Left
+        8, 9, 10,   8, 10, 11,
+        // Right
+        12, 13, 14, 12, 14, 15,
+        // Top
+        16, 17, 18, 16, 18, 19,
+        // Bottom
+        20, 21, 22, 20, 22, 23,
+    };
+    
+    // Multiple object positions
+    glm::vec3 oPositions[] = {
+        glm::vec3( 0.0f, 0.0f, 0.0f),
+        glm::vec3( 2.0f, 5.0f, -15.0f),
+        glm::vec3( -1.5f, -2.2f, -2.5f),
+        glm::vec3( -3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3( -1.7f, 3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f, 2.0f, -2.5f),
+        glm::vec3( 1.5f, 0.2f, -1.5f),
+        glm::vec3( -1.3f, 1.0f, -1.5f),
+    };
+    
     
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -195,14 +262,29 @@ int main()
     // Changing program doesn't unbind any uniforms so we can change freely
     glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
     
+    // Matrices uniforms
+    int modelUniform = glGetUniformLocation(shaderProgram, "model");
+    int viewUniform = glGetUniformLocation(shaderProgram, "view");
+    int projectionUniform = glGetUniformLocation(shaderProgram, "projection");
+    
     int timeUniform = glGetUniformLocation(shaderProgram, "time");
     int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
-    int transformUniform = glGetUniformLocation(shaderProgram, "transform");
-    int moveUniform = glGetUniformLocation(shaderProgram, "move");
     
-    // Transforms
-    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-    glm::mat4 transform = glm::mat4(1.0f);
+    
+    // Enable depth
+    glEnable(GL_DEPTH_TEST);
+    
+    // Matrix spaces
+    //glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    
+    // Projection
+    glm::mat4 projection = glm::perspective(glm::radians((float)SCR_FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, SCR_NEAR, SCR_FAR);
+    //glm::mat4 projection = glm::ortho(0.0f, SCR_WIDTH, 0.0f, SCR_HEIGHT, SCR_NEAR, SCR_FAR);
+    
+    // Static translations and rotations
+    //model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
@@ -214,28 +296,36 @@ int main()
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        // Reset matrices
+        //model = glm::mat4(1.0f);
         
         // update matrix
-        
-        glm::mat4 transform = glm::mat4(1.0f); // Reset matrix to identity
-        transform = glm::rotate(transform, time, glm::vec3(0.0, 1.0, 0.0));
-        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         
         // update uniforms
+        //glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewUniform, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionUniform, 1, GL_FALSE, glm::value_ptr(projection));
+        
         glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, zoom);
-        glUniformMatrix4fv(transformUniform, 1, GL_FALSE, glm::value_ptr(transform));
-        glUniform1i(moveUniform, 1);
         
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        
-        transform = glm::mat4(1.0f);
-        transform = glm::translate(transform, glm::vec3(-0.5f, 0.5f, 0.0f));
-        glUniformMatrix4fv(transformUniform, 1, GL_FALSE, glm::value_ptr(transform));
-        glUniform1i(moveUniform, 0);
-        
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // Draws
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, oPositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+            
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         
         
         glfwSwapBuffers(window);
