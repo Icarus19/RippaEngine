@@ -21,8 +21,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const float SCR_NEAR = 0.1f;
-const float SCR_FAR = 100.0f;
-const unsigned int SCR_FOV = 45;
+const float SCR_FAR = 1000.0f;
+const unsigned int SCR_FOV = 90;
 
 float zoom = 0.0f;
 
@@ -132,36 +132,47 @@ int main()
     // TEMP: Box
     float vertices[] = {
         // Position             Normal              TexCoord
-        // Front
-        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f,      0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
-        0.5f,  0.5f, 0.5f,      0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, 0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
-        // Back
-        0.5f, -0.5f, -0.5f,     0.0f, 0.0f, -1.0f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,     0.0f, 0.0f, -1.0f,  0.0f, 1.0f,
-        // Left
-        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f,     -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-        -0.5f,  0.5f, 0.5f,     -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-        // Right
-        0.5f, -0.5f, 0.5f,      1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-        0.5f,  0.5f, 0.5f,      1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-        // Top
-        -0.5f, 0.5f, 0.5f,      0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-        0.5f, 0.5f, 0.5f,       0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,     0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-        // Bottom
-        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f,     0.0f, -1.0f, 0.0f,  1.0f, 0.0f,
-        0.5f,  -0.5f, 0.5f,     0.0f, -1.0f, 0.0f,  1.0f, 1.0f,
-        -0.5f,  -0.5f, 0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+  
+        -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+  
+         0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+ 
+        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f
         
     };
     unsigned int indices[] = {
@@ -203,8 +214,8 @@ int main()
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
@@ -300,9 +311,12 @@ int main()
         
         // Reset matrices
         //model = glm::mat4(1.0f);
+        view = glm::mat4(1.0f);
         
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        view = glm::rotate(view, glm::radians(10.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
         
         // update uniforms
         //glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -321,6 +335,8 @@ int main()
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, oPositions[i]);
             float angle = 20.0f * i;
+            if (i % 2 == 0)
+                angle += time * 50.0f;
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
             
