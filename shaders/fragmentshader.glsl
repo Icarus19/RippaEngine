@@ -13,5 +13,6 @@ void main()
 {
     vec2 flippedTexCoord = vec2(-TexCoord.x, TexCoord.y);
 
-    color = mix(texture(texture0, TexCoord), texture(texture1, flippedTexCoord), zoom);
+    //color = mix(texture(texture0, TexCoord), texture(texture1, flippedTexCoord), zoom);
+	color = vec4(Color, 1.0);
 }

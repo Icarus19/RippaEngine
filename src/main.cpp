@@ -17,6 +17,7 @@ std::string LoadShaderSource(const char* path);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -25,6 +26,19 @@ const float SCR_FAR = 1000.0f;
 const unsigned int SCR_FOV = 90;
 
 float zoom = 0.0f;
+float speed = 5.0f;
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+
+bool firstMouse = true;
+float lastX = SCR_WIDTH * 0.5;
+float lastY = SCR_HEIGHT * 0.5;
+float yaw = -90.0f;
+float pitch = 0.0f;
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 // Usually main has to be last, but because we declare our functions at the top we can define main first
 int main()
@@ -49,6 +63,8 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
     
     // Load opengl using glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -132,62 +148,55 @@ int main()
     // TEMP: Box
     float vertices[] = {
         // Position             Normal              TexCoord
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
-
+        // Front
         -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
          0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
          0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
         -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
   
+        // Back
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
+
+        // Left
         -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
         -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
         -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
   
+        // Right
          0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
          0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
          0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
          0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
  
-        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
-
+        // Top
         -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
          0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
          0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
         -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f
-        
+    
+        // Bottom
+        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
     };
     unsigned int indices[] = {
         // Front
-        0, 1, 2,    0, 2, 3,
-        // Back
-        4, 5, 6,    4, 6, 7,
-        // Left
-        8, 9, 10,   8, 10, 11,
-        // Right
-        12, 13, 14, 12, 14, 15,
-        // Top
-        16, 17, 18, 16, 18, 19,
-        // Bottom
-        20, 21, 22, 20, 22, 23,
+        0, 1, 2,        2, 3, 0,
+        // Back 
+        4, 7, 6,        6, 5, 4,
+        // Left 
+        8, 9, 10,       10, 11, 8,
+        // Right    
+        12, 13, 14,     14, 15, 12,
+        // Top  
+        16, 17, 18,     18, 19, 16,
+        // Bottom   
+        20, 21, 22,     22, 23, 20,
     };
     
     // Multiple object positions
@@ -214,8 +223,8 @@ int main()
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
@@ -286,7 +295,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     
     // Matrix spaces
-    //glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
     
     // Projection
@@ -294,53 +303,56 @@ int main()
     //glm::mat4 projection = glm::ortho(0.0f, SCR_WIDTH, 0.0f, SCR_HEIGHT, SCR_NEAR, SCR_FAR);
     
     // Static translations and rotations
-    //model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
     {
+        // Frametime
+        float time = glfwGetTime();
+        deltaTime = time - lastFrame;
+        lastFrame = time;
+        
         // input
         processInput(window);
         glfwSetKeyCallback(window, key_callback);
-        float time = glfwGetTime();
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         // Reset matrices
-        //model = glm::mat4(1.0f);
+        model = glm::mat4(1.0f);
         view = glm::mat4(1.0f);
         
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        view = glm::rotate(view, glm::radians(10.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
+        //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        //view = glm::rotate(view, glm::radians(10.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         
         // update uniforms
         //glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewUniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projectionUniform, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         
         glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, zoom);
         
         // Draws
-        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //glDrawArrays(GL_TRIANGLES, 0, 36);
         for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, oPositions[i]);
-            float angle = 20.0f * i;
-            if (i % 2 == 0)
-                angle += time * 50.0f;
+            float angle = 60.0f * i + time * 50.0f;
+            
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
             
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
         }
         
         
@@ -379,16 +391,67 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+// Pooled inputs
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    
+    // Movement
+    float cameraSpeed = static_cast<float>(speed * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        cameraSpeed *= 2.0;
+    
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraFront * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraFront * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
 }
 
+// Input events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
+    // Change image
     if (key == GLFW_KEY_UP && action == GLFW_REPEAT && zoom < 1.0f)
         zoom += 0.1f;
     if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && zoom > 0.0f)
         zoom -= 0.1f;
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+    
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+    
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+    
+    yaw += xoffset;
+    pitch += yoffset;
+    
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+    
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
 }

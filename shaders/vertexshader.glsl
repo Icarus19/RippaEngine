@@ -23,8 +23,8 @@ void main()
 {
     float hue = float(gl_VertexID) / 4.0;
 
-    Color = hsv2rgb(vec3(hue, 1.0, 1.0));
-    //Color = aNormals;
+    //Color = hsv2rgb(vec3(hue, 1.0, 1.0));
+    Color = aPositions + 0.5;
     TexCoord = aTexCoords;
     gl_Position = projection * view * model * vec4(aPositions, 1.0);
 }
