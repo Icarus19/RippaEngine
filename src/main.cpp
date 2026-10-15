@@ -12,15 +12,13 @@
 
 #include "camera/Camera.h"
 #include "input/Input.h"
+#include "renderer/Texture.h"
 
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
 std::string LoadShaderSource(const char* path);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -234,52 +232,14 @@ int main()
     
     // VBO and VAO can be safely unbound at this point, but not the EBO
     
-    // Generate and bind texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    // Load images
-    stbi_set_flip_vertically_on_load(true); // Why is thing even a thing?
-    ImageData image = ImageLoader::Load("./assets/badApple/output_0300.jpg");
-    if (image.data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }else{
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(image.data);
-    
-    // Second image
-    unsigned int texture1;
-    glGenTextures(1, &texture1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    ImageData image1 = ImageLoader::Load("./assets/badApple/output_4900.jpg");
-    if (image1.data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image1.width, image1.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image1.data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(image1.data);
-    
+    Texture texture;
+    texture.Bind(0);
+    Texture texture16("./assets/default16bit.png");
     // Set second texture as uniform because the first one is automatic
     glUseProgram(shaderProgram); // Set shader before any uniforms are set
     // Static uniforms can be bound to a program before the loop
     // Changing program doesn't unbind any uniforms so we can change freely
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
     
     // Matrices uniforms
@@ -316,8 +276,6 @@ int main()
         
         // input
         input.ProcessKeyboard(time);
-        //processInput(window);
-        //glfwSetKeyCallback(window, key_callback);
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
@@ -329,22 +287,19 @@ int main()
         
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        //view = glm::rotate(view, glm::radians(10.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
         view = camera.GetViewMatrix();
         
         // update uniforms
-        //glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewUniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projectionUniform, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         
         glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, imageSwap);
         
         // Draws
         //glDrawArrays(GL_TRIANGLES, 0, 36);
-        for (unsigned int i = 0; i < 10; i++)
+        /*for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, oPositions[i]);
@@ -354,7 +309,13 @@ int main()
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
             
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-        }
+        }*/
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        
+        model = glm::translate(model, glm::vec3(5.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
+        texture16.Bind(0);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         
         
         glfwSwapBuffers(window);
@@ -390,90 +351,4 @@ std::string LoadShaderSource(const char* path)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-}
-
-// Pooled inputs
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    
-    // Movement
-    //float cameraSpeed = static_cast<float>(speed * deltaTime);
-    //if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-    //    cameraSpeed *= 2.0;
-    
-    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraFront * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraFront * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    */
-    // FPS camera with no y movement
-    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)), cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)), cameraUp)) * cameraSpeed;
-    */
-    
-    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessMovement(CameraMovement::FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessMovement(CameraMovement::BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessMovement(CameraMovement::LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessMovement(CameraMovement::RIGHT, deltaTime);
-    */
-}
-
-// Input events
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-    // Change image
-    if (key == GLFW_KEY_UP && action == GLFW_REPEAT && imageSwap < 1.0f)
-        imageSwap += 0.1f;
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && imageSwap > 0.0f)
-        imageSwap -= 0.1f;
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    /*camera.ProcessLook(xpos, ypos);
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-    
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
-    lastX = xpos;
-    lastY = ypos;
-    
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-    
-    yaw += xoffset;
-    pitch += yoffset;
-    
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-    
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);*/
 }

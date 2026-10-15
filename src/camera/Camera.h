@@ -19,7 +19,7 @@ public:
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
         float yaw = -90.0f,
         float pitch = 0.0f,
-        float speed = 0.2f,
+        float speed = 0.02f,
         float sensitivity = 0.1f,
         float zoom = 90.0f
     );

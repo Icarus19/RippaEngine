@@ -11,8 +11,11 @@ uniform float zoom;
 
 void main()
 {
-    vec2 flippedTexCoord = vec2(-TexCoord.x, TexCoord.y);
+    //vec2 flippedTexCoord = vec2(-TexCoord.x, TexCoord.y);
 
-    //color = mix(texture(texture0, TexCoord), texture(texture1, flippedTexCoord), zoom);
-	color = vec4(Color, 1.0);
+	float colorV = texture(texture0, TexCoord).r;
+    //color = vec4(colorV, colorV, colorV, 1.0);
+	//color = mix(texture(texture0, TexCoord), texture(texture1, flippedTexCoord), zoom);
+	//color = vec4(Color, 1.0);
+	color = texture(texture0, TexCoord);
 }
