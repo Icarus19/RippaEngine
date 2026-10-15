@@ -22,10 +22,13 @@ target_include_directories(glad PUBLIC
 
 add_executable(RippaEngine
         src/main.cpp
+        src/camera/Camera.cpp
+        src/input/Input.cpp
         src/assets/ImageLoader.cpp
 )
 
 target_include_directories(RippaEngine PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         third_party/stb_image
 )
 

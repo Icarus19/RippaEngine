@@ -5,10 +5,13 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include "assets/ImageLoader.h"
-#include <stb_image.h>
+#include "stb_image.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "camera/Camera.h"
+#include "input/Input.h"
 
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
@@ -25,12 +28,6 @@ const float SCR_NEAR = 0.1f;
 const float SCR_FAR = 1000.0f;
 const unsigned int SCR_FOV = 90;
 
-float zoom = 0.0f;
-float speed = 5.0f;
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-
 bool firstMouse = true;
 float lastX = SCR_WIDTH * 0.5;
 float lastY = SCR_HEIGHT * 0.5;
@@ -39,6 +36,7 @@ float pitch = 0.0f;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float imageSwap = 0.1f;
 
 // Usually main has to be last, but because we declare our functions at the top we can define main first
 int main()
@@ -63,8 +61,10 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetCursorPosCallback(window, mouse_callback);
+    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+    Input input(window, camera);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetCursorPosCallback(window, mouse_callback);
     
     // Load opengl using glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -315,8 +315,9 @@ int main()
         lastFrame = time;
         
         // input
-        processInput(window);
-        glfwSetKeyCallback(window, key_callback);
+        input.ProcessKeyboard(time);
+        //processInput(window);
+        //glfwSetKeyCallback(window, key_callback);
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
@@ -330,7 +331,7 @@ int main()
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         //view = glm::rotate(view, glm::radians(10.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = camera.GetViewMatrix();
         
         // update uniforms
         //glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -339,7 +340,7 @@ int main()
         glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         
         glUniform1f(timeUniform, time);
-        glUniform1f(zoomUniform, zoom);
+        glUniform1f(zoomUniform, imageSwap);
         
         // Draws
         //glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -398,11 +399,11 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
     
     // Movement
-    float cameraSpeed = static_cast<float>(speed * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        cameraSpeed *= 2.0;
+    //float cameraSpeed = static_cast<float>(speed * deltaTime);
+    //if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    //    cameraSpeed *= 2.0;
     
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraFront * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         cameraPos -= cameraFront * cameraSpeed;
@@ -410,21 +411,42 @@ void processInput(GLFWwindow* window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
+    */
+    // FPS camera with no y movement
+    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)), cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(normalize(glm::vec3(cameraFront.x, 0.0, cameraFront.z)), cameraUp)) * cameraSpeed;
+    */
+    
+    /*if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessMovement(CameraMovement::FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessMovement(CameraMovement::BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessMovement(CameraMovement::LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessMovement(CameraMovement::RIGHT, deltaTime);
+    */
 }
 
 // Input events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     // Change image
-    if (key == GLFW_KEY_UP && action == GLFW_REPEAT && zoom < 1.0f)
-        zoom += 0.1f;
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && zoom > 0.0f)
-        zoom -= 0.1f;
+    if (key == GLFW_KEY_UP && action == GLFW_REPEAT && imageSwap < 1.0f)
+        imageSwap += 0.1f;
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && imageSwap > 0.0f)
+        imageSwap -= 0.1f;
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+    /*camera.ProcessLook(xpos, ypos);
     if (firstMouse)
     {
         lastX = xpos;
@@ -453,5 +475,5 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
+    cameraFront = glm::normalize(direction);*/
 }
