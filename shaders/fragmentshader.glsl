@@ -4,6 +4,7 @@ layout(location = 0) out vec4 color;
 
 in vec3 Color;
 in vec2 TexCoord;
+in vec3 TexCoords3D;
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
@@ -18,4 +19,6 @@ void main()
 	//color = mix(texture(texture0, TexCoord), texture(texture1, flippedTexCoord), zoom);
 	//color = vec4(Color, 1.0);
 	color = texture(texture0, TexCoord);
+	//color = vec4(TexCoord.x, TexCoord.y, 0.0, 1.0);
+	//color = vec4(TexCoords3D, 1.0);
 }

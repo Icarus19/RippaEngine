@@ -25,6 +25,8 @@ add_executable(RippaEngine
         src/camera/Camera.cpp
         src/input/Input.cpp
         src/renderer/Texture.cpp
+        src/renderer/Mesh.cpp
+        src/renderer/Shader.cpp
         src/assets/ImageLoader.cpp
 )
 

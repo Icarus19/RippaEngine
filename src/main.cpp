@@ -1,11 +1,11 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <random>
 #include <sstream>
 #include <string>
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
-#include "assets/ImageLoader.h"
-#include "stb_image.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,6 +13,7 @@
 #include "camera/Camera.h"
 #include "input/Input.h"
 #include "renderer/Texture.h"
+#include "renderer/Mesh.h"
 
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
@@ -122,29 +123,30 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     
+    // TODO: Remove
     // TEMP: vertex data and indices this makes a square
     // We will use 3 attributes, position, normals and texcoord
-    /*float vertices[] = {
-        0.5f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-        0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-        -0.5f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+    float pVertices[] = {
+        -0.5f, -0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+         0.5f, -0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
+         0.5f,  0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+        -0.5f,  0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
     };
-    unsigned int indices[] = {
-        0, 1, 3,
-        1, 2, 3,
-    };*/
+    unsigned int pIndices[] = {
+        0, 1, 2,
+        2, 3, 0,
+    };
     // TEMP: this is just one triangle
-    /*float vertices[] = {
+    float tVertices[] = {
         -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
         0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
         0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f,
     };
-    unsigned int indices[] = {
+    unsigned int tIndices[] = {
        0, 1, 2,
-    };*/
+    };
     // TEMP: Box
-    float vertices[] = {
+    float cVertices[] = {
         // Position             Normal              TexCoord
         // Front
         -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
@@ -182,7 +184,7 @@ int main()
          0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
         -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
     };
-    unsigned int indices[] = {
+    unsigned int cIndices[] = {
         // Front
         0, 1, 2,        2, 3, 0,
         // Back 
@@ -211,26 +213,12 @@ int main()
         glm::vec3( -1.3f, 1.0f, -1.5f),
     };
     
-    
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    
-    // bind VAO first then bind and set buffer, then configure attributes
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    
-    // VBO and VAO can be safely unbound at this point, but not the EBO
+    Mesh plane(pVertices, sizeof(pVertices), pIndices, std::size(pIndices));
+    Mesh triangle(tVertices, sizeof(tVertices), tIndices, std::size(tIndices));
+    Mesh cube(cVertices, sizeof(cVertices), cIndices, std::size(cIndices));
+    Mesh* meshes[11] = { &cube, &plane, &cube, &triangle, &cube, &triangle, &cube, &plane, &cube, &triangle, &cube };
+    std::mt19937 rng(std::random_device{}());
+    std::ranges::shuffle(meshes, rng);
     
     Texture texture;
     texture.Bind(0);
@@ -263,8 +251,17 @@ int main()
     //glm::mat4 projection = glm::ortho(0.0f, SCR_WIDTH, 0.0f, SCR_HEIGHT, SCR_NEAR, SCR_FAR);
     
     // Static translations and rotations
-    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+    
+    
+    // Let there be light
+    unsigned int lightVAO, lightVBO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    glGenBuffers(1, &lightVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cVertices), cVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
     
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
@@ -282,6 +279,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         // Reset matrices
+        // Swap shader back to objects every frame
         model = glm::mat4(1.0f);
         view = glm::mat4(1.0f);
         
@@ -298,8 +296,7 @@ int main()
         glUniform1f(zoomUniform, imageSwap);
         
         // Draws
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
-        /*for (unsigned int i = 0; i < 10; i++)
+        for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, oPositions[i]);
@@ -307,14 +304,12 @@ int main()
             
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
-            
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-        }*/
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        
-        model = glm::translate(model, glm::vec3(5.0f, 0.0f, 0.0f));
-        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
-        texture16.Bind(0);
+            texture.Bind(0);
+            meshes[i]->Draw();
+        }
+        // Switch shader to lightsource
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         
         
@@ -325,9 +320,6 @@ int main()
     glfwDestroyWindow(window);
     
     // de-allocate resources
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
