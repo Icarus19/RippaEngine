@@ -28,10 +28,12 @@ add_executable(RippaEngine
         src/renderer/Mesh.cpp
         src/renderer/Shader.cpp
         src/assets/ImageLoader.cpp
+        src/renderer/Shader.h
 )
 
 target_include_directories(RippaEngine PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        third_party/glad
         third_party/stb_image
 )
 

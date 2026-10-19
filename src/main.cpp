@@ -2,13 +2,13 @@
 #include <iostream>
 #include <fstream>
 #include <random>
-#include <sstream>
 #include <string>
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <renderer/Shader.h>
 
 #include "camera/Camera.h"
 #include "input/Input.h"
@@ -18,7 +18,6 @@
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
-std::string LoadShaderSource(const char* path);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 const unsigned int SCR_WIDTH = 800;
@@ -36,6 +35,21 @@ float pitch = 0.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float imageSwap = 0.1f;
+
+struct Light
+{
+    glm::vec3 position;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
+
+struct Material
+{
+    Texture &diffuse;
+    glm::vec3 specular;
+    float shininess;
+};
 
 // Usually main has to be last, but because we declare our functions at the top we can define main first
 int main()
@@ -62,8 +76,6 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
     Input input(window, camera);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //glfwSetCursorPosCallback(window, mouse_callback);
     
     // Load opengl using glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -72,57 +84,23 @@ int main()
         glfwTerminate();
         return -1;
     }
-    
-    // Loading and compiling shaders
-    std::string vertexSource = LoadShaderSource("./shaders/vertexshader.glsl");
-    std::string fragmentSource = LoadShaderSource("./shaders/fragmentshader.glsl");
-    const char* vertexSourcePointer = vertexSource.c_str();
-    const char* fragmentSourcePointer = fragmentSource.c_str();
-    
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSourcePointer, NULL);
-    glCompileShader(vertexShader);
-    
-    // check vertex compile errors
+
+    unsigned int shaderProgram = glCreateProgram();
+    Shader vertexShader("./shaders/vertexshader.glsl", GL_VERTEX_SHADER);
+    Shader fragmentShader("./shaders/fragmentshader.glsl", GL_FRAGMENT_SHADER);
+	
+    glAttachShader(shaderProgram, vertexShader.GetId());
+    glAttachShader(shaderProgram, fragmentShader.GetId());
+    glLinkProgram(shaderProgram);
     int success;
     char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSourcePointer, NULL);
-    glCompileShader(fragmentShader);
-    
-    // check fragment compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    
-    // Create and attach shader program
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    
-    // check linking errors
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-    
-    // Cleaning up shaders
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    
+
     // TODO: Remove
     // TEMP: vertex data and indices this makes a square
     // We will use 3 attributes, position, normals and texcoord
@@ -143,8 +121,8 @@ int main()
         0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f,
     };
     unsigned int tIndices[] = {
-       0, 1, 2,
-    };
+        0, 1, 2,
+     };
     // TEMP: Box
     float cVertices[] = {
         // Position             Normal              TexCoord
@@ -221,22 +199,55 @@ int main()
     std::ranges::shuffle(meshes, rng);
     
     Texture texture;
-    texture.Bind(0);
-    Texture texture16("./assets/default16bit.png");
+    //texture.Bind(0);
+    //Texture texture16("./assets/default16bit.png");
     // Set second texture as uniform because the first one is automatic
     glUseProgram(shaderProgram); // Set shader before any uniforms are set
     // Static uniforms can be bound to a program before the loop
     // Changing program doesn't unbind any uniforms so we can change freely
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
+    //glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
+    //glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
+    
+    // Let there be light
+    Light light(
+        glm::vec3(10.0f, 10.0f, 10.0f),
+        glm::vec3(0.1f, 0.1f, 0.1f),
+        glm::vec3(1.0f, 0.98f, 0.96f),
+        glm::vec3(1.0f, 1.0f, 1.0f)
+    );
+    Material material(
+        texture, 
+        glm::vec3(0.5f, 0.5f, 0.5f), 
+        32.0f
+    );
     
     // Matrices uniforms
     int modelUniform = glGetUniformLocation(shaderProgram, "model");
     int viewUniform = glGetUniformLocation(shaderProgram, "view");
     int projectionUniform = glGetUniformLocation(shaderProgram, "projection");
+    int cameraUniform = glGetUniformLocation(shaderProgram, "viewPosition");
     
     int timeUniform = glGetUniformLocation(shaderProgram, "time");
     int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
+    
+    // Light
+    int lightPositionUniform = glGetUniformLocation(shaderProgram, "light.position");
+    glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
+    int lightAmbientUniform = glGetUniformLocation(shaderProgram, "light.ambient");
+    glUniform3fv(lightAmbientUniform, 1, glm::value_ptr(light.ambient));
+    int lightDiffuseUniform = glGetUniformLocation(shaderProgram, "light.diffuse");
+    glUniform3fv(lightDiffuseUniform, 1, glm::value_ptr(light.diffuse));
+    int lightSpecularUniform = glGetUniformLocation(shaderProgram, "light.specular");
+    glUniform3fv(lightSpecularUniform, 1, glm::value_ptr(light.specular));
+    
+    // Material
+    int materialDiffuseUniform = glGetUniformLocation(shaderProgram, "material.diffuse");
+    glUniform1i(materialDiffuseUniform, 0);
+    material.diffuse.Bind(0);
+    int materialSpecularUniform = glGetUniformLocation(shaderProgram, "material.specular");
+    glUniform3fv(materialSpecularUniform, 1, glm::value_ptr(material.specular));
+    int materialShininessUniform = glGetUniformLocation(shaderProgram, "material.shininess");
+    glUniform1f(materialShininessUniform, material.shininess);
     
     
     // Enable depth
@@ -253,16 +264,6 @@ int main()
     // Static translations and rotations
     
     
-    // Let there be light
-    unsigned int lightVAO, lightVBO;
-    glGenVertexArrays(1, &lightVAO);
-    glBindVertexArray(lightVAO);
-    glGenBuffers(1, &lightVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cVertices), cVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    
     // Rendering pipeline
     while (!glfwWindowShouldClose(window))
     {
@@ -272,7 +273,7 @@ int main()
         lastFrame = time;
         
         // input
-        input.ProcessKeyboard(time);
+        input.ProcessKeyboard(deltaTime);
         
         // render
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
@@ -291,6 +292,7 @@ int main()
         glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewUniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projectionUniform, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniform3fv(cameraUniform, 1, glm::value_ptr(camera.GetPosition()));
         
         glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, imageSwap);
@@ -304,7 +306,7 @@ int main()
             
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
-            texture.Bind(0);
+            //texture.Bind(0);
             meshes[i]->Draw();
         }
         // Switch shader to lightsource
@@ -323,21 +325,6 @@ int main()
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
-}
-
-std::string LoadShaderSource(const char* path)
-{
-    std::ifstream file(path);
-    
-    if (!file)
-    {
-        throw std::runtime_error("Failed to load shader source");
-    }
-    
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    
-    return buffer.str();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

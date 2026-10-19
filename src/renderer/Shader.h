@@ -1,19 +1,20 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <string>
 
 class Shader
 {
 public:
-    Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const char* path, GLenum type);
     ~Shader();
     
-    void Use();
-    
-    void SetBool(const std::string &name, bool value) const;
-    void SetInt(const std::string &name, int value) const;
-    void SetFloat(const std::string &name, float value) const;
+    unsigned int GetId() const;
+    GLenum GetType() const;
     
 private:
-    unsigned int ID;
+    unsigned int m_id;
+    GLenum m_type;
+
+    static std::string LoadShaderSource(const char* path);
 };

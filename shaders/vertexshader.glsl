@@ -18,6 +18,8 @@ vec3 hsv2rgb(vec3 c)
 out vec3 Color;
 out vec2 TexCoord;
 out vec3 TexCoords3D;
+out vec3 Normal;
+out vec3 FragPosition;
 uniform float time;
 
 void main()
@@ -28,5 +30,7 @@ void main()
     //Color = hsv2rgb(vec3(hue, 1.0, 1.0));
     //Color = aPositions + 0.5;
     TexCoord = aTexCoords;
+    Normal = mat3(transpose(inverse(model))) * aNormals;
+    FragPosition = vec3(model * vec4(aPositions, 1.0));
     gl_Position = projection * view * model * vec4(aPositions, 1.0);
 }
