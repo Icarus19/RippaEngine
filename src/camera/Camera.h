@@ -37,6 +37,7 @@ public:
 
     glm::mat4 GetViewMatrix() const;
     glm::vec3 GetPosition() const;
+    glm::vec3 GetDirection() const;
 
     void ProcessMovement(CameraMovement direction, float deltaTime);
     void ProcessLook(float xOffset, float yOffset);

@@ -55,6 +55,11 @@ glm::vec3 Camera::GetPosition() const
     return Position;
 }
 
+glm::vec3 Camera::GetDirection() const
+{
+    return Front;
+}
+
 // TODO: normalize movement so diagonal movement isn't faster
 void Camera::ProcessMovement(CameraMovement direction, float deltaTime)
 {

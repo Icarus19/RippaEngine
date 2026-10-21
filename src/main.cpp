@@ -36,12 +36,22 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float imageSwap = 0.1f;
 
+// TODO: radius with falloff
+// TODO: also, light class with different kinds
 struct Light
 {
     glm::vec3 position;
+    glm::vec3 direction;
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
+    
+    float intensity;
+    float cutoff;
+    float outerCutoff;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 struct Material
@@ -198,9 +208,9 @@ int main()
     std::mt19937 rng(std::random_device{}());
     std::ranges::shuffle(meshes, rng);
     
-    Texture texture;
+    //Texture texture;
     //texture.Bind(0);
-    //Texture texture16("./assets/default16bit.png");
+    Texture texture("./assets/default16bit.png");
     // Set second texture as uniform because the first one is automatic
     glUseProgram(shaderProgram); // Set shader before any uniforms are set
     // Static uniforms can be bound to a program before the loop
@@ -209,12 +219,20 @@ int main()
     //glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
     
     // Let there be light
-    Light light(
-        glm::vec3(10.0f, 10.0f, 10.0f),
-        glm::vec3(0.1f, 0.1f, 0.1f),
-        glm::vec3(1.0f, 0.98f, 0.96f),
-        glm::vec3(1.0f, 1.0f, 1.0f)
-    );
+    Light light{
+        .position = camera.GetPosition(), // lets use camera position for light
+        .direction = camera.GetDirection(),
+        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
+        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+        
+        .intensity = 2.0f,
+        .cutoff = glm::cos(glm::radians(12.5f)), // TODO: make gradual
+        .outerCutoff = glm::cos(glm::radians(25.0f)),
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032f
+    };
     Material material(
         texture, 
         glm::vec3(0.5f, 0.5f, 0.5f), 
@@ -233,12 +251,27 @@ int main()
     // Light
     int lightPositionUniform = glGetUniformLocation(shaderProgram, "light.position");
     glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
+    int lightDirectionUniform = glGetUniformLocation(shaderProgram, "light.direction");
+    glUniform3fv(lightDirectionUniform, 1, glm::value_ptr(light.direction));
     int lightAmbientUniform = glGetUniformLocation(shaderProgram, "light.ambient");
     glUniform3fv(lightAmbientUniform, 1, glm::value_ptr(light.ambient));
     int lightDiffuseUniform = glGetUniformLocation(shaderProgram, "light.diffuse");
     glUniform3fv(lightDiffuseUniform, 1, glm::value_ptr(light.diffuse));
     int lightSpecularUniform = glGetUniformLocation(shaderProgram, "light.specular");
     glUniform3fv(lightSpecularUniform, 1, glm::value_ptr(light.specular));
+    
+    int lightIntensityUniform = glGetUniformLocation(shaderProgram, "light.intensity");
+    glUniform1f(lightIntensityUniform, light.intensity);
+    int lightCutoffUniform = glGetUniformLocation(shaderProgram, "light.cutoff");
+    glUniform1f(lightCutoffUniform, light.cutoff);
+    int lightOuterCutoffUniform = glGetUniformLocation(shaderProgram, "light.outerCutoff");
+    glUniform1f(lightOuterCutoffUniform, light.outerCutoff);
+    int lightConstantUniform = glGetUniformLocation(shaderProgram, "light.constant");
+    glUniform1f(lightConstantUniform, light.constant);
+    int lightLinearUniform = glGetUniformLocation(shaderProgram, "light.linear");
+    glUniform1f(lightLinearUniform, light.linear);
+    int lightQuadraticUniform = glGetUniformLocation(shaderProgram, "light.quadratic");
+    glUniform1f(lightQuadraticUniform, light.quadratic);
     
     // Material
     int materialDiffuseUniform = glGetUniformLocation(shaderProgram, "material.diffuse");
@@ -287,6 +320,10 @@ int main()
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         view = camera.GetViewMatrix();
+        light.position = camera.GetPosition();
+        glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
+        light.direction = camera.GetDirection();
+        glUniform3fv(lightDirectionUniform, 1, glm::value_ptr(light.direction));
         
         // update uniforms
         glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -309,7 +346,6 @@ int main()
             //texture.Bind(0);
             meshes[i]->Draw();
         }
-        // Switch shader to lightsource
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
