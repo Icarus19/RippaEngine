@@ -226,7 +226,21 @@ int main()
         .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
         .specular = glm::vec3(1.0f, 1.0f, 1.0f),
         
-        .intensity = 2.0f,
+        .intensity = 0.5f,
+        .cutoff = glm::cos(glm::radians(12.5f)), // TODO: make gradual
+        .outerCutoff = glm::cos(glm::radians(25.0f)),
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032f
+    };
+    Light light1{
+        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+        .direction = glm::vec3(1.0f, 0.0f, 0.0f),
+        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
+        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+        
+        .intensity = 6.0f,
         .cutoff = glm::cos(glm::radians(12.5f)), // TODO: make gradual
         .outerCutoff = glm::cos(glm::radians(25.0f)),
         .constant = 1.0f,
@@ -249,29 +263,54 @@ int main()
     int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
     
     // Light
-    int lightPositionUniform = glGetUniformLocation(shaderProgram, "light.position");
+    int lightPositionUniform = glGetUniformLocation(shaderProgram, "lights[0].position");
     glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
-    int lightDirectionUniform = glGetUniformLocation(shaderProgram, "light.direction");
+    int lightDirectionUniform = glGetUniformLocation(shaderProgram, "lights[0].direction");
     glUniform3fv(lightDirectionUniform, 1, glm::value_ptr(light.direction));
-    int lightAmbientUniform = glGetUniformLocation(shaderProgram, "light.ambient");
+    int lightAmbientUniform = glGetUniformLocation(shaderProgram, "lights[0].ambient");
     glUniform3fv(lightAmbientUniform, 1, glm::value_ptr(light.ambient));
-    int lightDiffuseUniform = glGetUniformLocation(shaderProgram, "light.diffuse");
+    int lightDiffuseUniform = glGetUniformLocation(shaderProgram, "lights[0].diffuse");
     glUniform3fv(lightDiffuseUniform, 1, glm::value_ptr(light.diffuse));
-    int lightSpecularUniform = glGetUniformLocation(shaderProgram, "light.specular");
+    int lightSpecularUniform = glGetUniformLocation(shaderProgram, "lights[0].specular");
     glUniform3fv(lightSpecularUniform, 1, glm::value_ptr(light.specular));
     
-    int lightIntensityUniform = glGetUniformLocation(shaderProgram, "light.intensity");
+    int lightIntensityUniform = glGetUniformLocation(shaderProgram, "lights[0].intensity");
     glUniform1f(lightIntensityUniform, light.intensity);
-    int lightCutoffUniform = glGetUniformLocation(shaderProgram, "light.cutoff");
+    int lightCutoffUniform = glGetUniformLocation(shaderProgram, "lights[0].cutoff");
     glUniform1f(lightCutoffUniform, light.cutoff);
-    int lightOuterCutoffUniform = glGetUniformLocation(shaderProgram, "light.outerCutoff");
+    int lightOuterCutoffUniform = glGetUniformLocation(shaderProgram, "lights[0].outerCutoff");
     glUniform1f(lightOuterCutoffUniform, light.outerCutoff);
-    int lightConstantUniform = glGetUniformLocation(shaderProgram, "light.constant");
+    int lightConstantUniform = glGetUniformLocation(shaderProgram, "lights[0].constant");
     glUniform1f(lightConstantUniform, light.constant);
-    int lightLinearUniform = glGetUniformLocation(shaderProgram, "light.linear");
+    int lightLinearUniform = glGetUniformLocation(shaderProgram, "lights[0].linear");
     glUniform1f(lightLinearUniform, light.linear);
-    int lightQuadraticUniform = glGetUniformLocation(shaderProgram, "light.quadratic");
+    int lightQuadraticUniform = glGetUniformLocation(shaderProgram, "lights[0].quadratic");
     glUniform1f(lightQuadraticUniform, light.quadratic);
+    
+    // light1
+    int light1PositionUniform = glGetUniformLocation(shaderProgram, "lights[1].position");
+    glUniform3fv(light1PositionUniform, 1, glm::value_ptr(light1.position));
+    int light1DirectionUniform = glGetUniformLocation(shaderProgram, "lights[1].direction");
+    glUniform3fv(light1DirectionUniform, 1, glm::value_ptr(light1.direction));
+    int light1AmbientUniform = glGetUniformLocation(shaderProgram, "lights[1].ambient");
+    glUniform3fv(light1AmbientUniform, 1, glm::value_ptr(light1.ambient));
+    int light1DiffuseUniform = glGetUniformLocation(shaderProgram, "lights[1].diffuse");
+    glUniform3fv(light1DiffuseUniform, 1, glm::value_ptr(light1.diffuse));
+    int light1SpecularUniform = glGetUniformLocation(shaderProgram, "lights[1].specular");
+    glUniform3fv(light1SpecularUniform, 1, glm::value_ptr(light1.specular));
+    
+    int light1IntensityUniform = glGetUniformLocation(shaderProgram, "lights[1].intensity");
+    glUniform1f(light1IntensityUniform, light1.intensity);
+    int light1CutoffUniform = glGetUniformLocation(shaderProgram, "lights[1].cutoff");
+    glUniform1f(light1CutoffUniform, light1.cutoff);
+    int light1OuterCutoffUniform = glGetUniformLocation(shaderProgram, "lights[1].outerCutoff");
+    glUniform1f(light1OuterCutoffUniform, light1.outerCutoff);
+    int light1ConstantUniform = glGetUniformLocation(shaderProgram, "lights[1].constant");
+    glUniform1f(light1ConstantUniform, light1.constant);
+    int light1LinearUniform = glGetUniformLocation(shaderProgram, "lights[1].linear");
+    glUniform1f(light1LinearUniform, light1.linear);
+    int light1QuadraticUniform = glGetUniformLocation(shaderProgram, "lights[1].quadratic");
+    glUniform1f(light1QuadraticUniform, light1.quadratic);
     
     // Material
     int materialDiffuseUniform = glGetUniformLocation(shaderProgram, "material.diffuse");
