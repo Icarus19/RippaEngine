@@ -15,6 +15,10 @@
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
@@ -93,6 +97,58 @@ int main()
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
+    }
+    
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile("./assets/models/bunny.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    
+    if (!scene)
+    {
+        std::cerr << "Assimp failed: "
+        << importer.GetErrorString() << std::endl;
+    }
+    std::cout << "Import succeeded!\n";
+    std::cout << "Meshes: " << scene->mNumMeshes << '\n';
+    std::cout << "Materials: " << scene->mNumMaterials << '\n';
+    std::cout << "Root node: "
+              << scene->mRootNode->mName.C_Str() << '\n';
+
+    for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
+    {
+        const aiMesh* mesh = scene->mMeshes[i];
+
+        std::cout << "\nMesh " << i << '\n';
+        std::cout << "  Name: " << mesh->mName.C_Str() << '\n';
+        std::cout << "  Vertices: " << mesh->mNumVertices << '\n';
+        std::cout << "  Faces: " << mesh->mNumFaces << '\n';
+        std::cout << "  Has normals: "
+                  << (mesh->HasNormals() ? "yes" : "no") << '\n';
+        std::cout << "  Has texture coordinates: "
+                  << (mesh->HasTextureCoords(0) ? "yes" : "no") << '\n';
+
+        if (mesh->mNumVertices > 0)
+        {
+            const aiVector3D& v = mesh->mVertices[0];
+
+            std::cout << "  First vertex: ("
+                      << v.x << ", "
+                      << v.y << ", "
+                      << v.z << ")\n";
+        }
+
+        if (mesh->mNumFaces > 0)
+        {
+            const aiFace& face = mesh->mFaces[0];
+
+            std::cout << "  First face indices:";
+
+            for (unsigned int j = 0; j < face.mNumIndices; ++j)
+            {
+                std::cout << ' ' << face.mIndices[j];
+            }
+
+            std::cout << '\n';
+        }
     }
 
     unsigned int shaderProgram = glCreateProgram();

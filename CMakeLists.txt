@@ -11,13 +11,21 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(ZLIB REQUIRED)
 
 add_library(glad STATIC
     third_party/glad/src/glad.c
 )
-
 target_include_directories(glad PUBLIC
     third_party/glad/include
+)
+
+add_library(assimp STATIC IMPORTED)
+set_target_properties(assimp PROPERTIES
+    IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/assimp/lib/libassimp.a
+    INTERFACE_INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/assimp/include
 )
 
 add_executable(RippaEngine
@@ -41,4 +49,6 @@ target_link_libraries(RippaEngine PRIVATE
         glad
         OpenGL::GL
         glfw
+        assimp
+        ZLIB::ZLIB
 )
