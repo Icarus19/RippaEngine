@@ -15,4 +15,5 @@ public:
     
 private:
     unsigned int m_id = 0;
+    std::string type; // This is not used for now because we use glenum currently. Will replace with a struct on further versions
 };

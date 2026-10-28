@@ -99,6 +99,8 @@ int main()
         return -1;
     }
     
+    std::vector<Mesh> meshes;
+    
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile("./assets/models/bunny.obj", aiProcess_Triangulate | aiProcess_GenNormals);
     
@@ -107,49 +109,52 @@ int main()
         std::cerr << "Assimp failed: "
         << importer.GetErrorString() << std::endl;
     }
-    std::cout << "Import succeeded!\n";
-    std::cout << "Meshes: " << scene->mNumMeshes << '\n';
-    std::cout << "Materials: " << scene->mNumMaterials << '\n';
-    std::cout << "Root node: "
-              << scene->mRootNode->mName.C_Str() << '\n';
-
-    for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
+    
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
     {
         const aiMesh* mesh = scene->mMeshes[i];
-
-        std::cout << "\nMesh " << i << '\n';
-        std::cout << "  Name: " << mesh->mName.C_Str() << '\n';
-        std::cout << "  Vertices: " << mesh->mNumVertices << '\n';
-        std::cout << "  Faces: " << mesh->mNumFaces << '\n';
-        std::cout << "  Has normals: "
-                  << (mesh->HasNormals() ? "yes" : "no") << '\n';
-        std::cout << "  Has texture coordinates: "
-                  << (mesh->HasTextureCoords(0) ? "yes" : "no") << '\n';
-
-        if (mesh->mNumVertices > 0)
+        
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::vector<Texture> textures;
+        
+        for (unsigned int j = 0; j < mesh->mNumVertices; j++)
         {
-            const aiVector3D& v = mesh->mVertices[0];
-
-            std::cout << "  First vertex: ("
-                      << v.x << ", "
-                      << v.y << ", "
-                      << v.z << ")\n";
+            Vertex vertex;
+        
+            vertex.position = {
+                mesh->mVertices[j].x,
+                mesh->mVertices[j].y,
+                mesh->mVertices[j].z
+            };
+        
+            vertex.normal = {
+                mesh->mNormals[j].x,
+                mesh->mNormals[j].y,
+                mesh->mNormals[j].z
+            };
+        
+            vertex.texCoord = {
+                mesh->mTextureCoords[0][j].x,
+                mesh->mTextureCoords[0][j].y
+            };
+        
+            vertices.push_back(vertex);
         }
-
-        if (mesh->mNumFaces > 0)
+    
+        for (unsigned int j = 0; j < mesh->mNumFaces; j++)
         {
-            const aiFace& face = mesh->mFaces[0];
-
-            std::cout << "  First face indices:";
-
-            for (unsigned int j = 0; j < face.mNumIndices; ++j)
+            const aiFace& face = mesh->mFaces[j];
+        
+            for (unsigned int k = 0; k < face.mNumIndices; k++)
             {
-                std::cout << ' ' << face.mIndices[j];
+                indices.push_back(face.mIndices[k]);
             }
-
-            std::cout << '\n';
         }
+    
+        meshes.emplace_back(std::move(vertices), std::move(indices));//, textures);
     }
+    
 
     unsigned int shaderProgram = glCreateProgram();
     Shader vertexShader("./shaders/vertexshader.glsl", GL_VERTEX_SHADER);
@@ -257,13 +262,13 @@ int main()
         glm::vec3( -1.3f, 1.0f, -1.5f),
     };
     
-    Mesh plane(pVertices, sizeof(pVertices), pIndices, std::size(pIndices));
+    /*Mesh plane(pVertices, sizeof(pVertices), pIndices, std::size(pIndices));
     Mesh triangle(tVertices, sizeof(tVertices), tIndices, std::size(tIndices));
     Mesh cube(cVertices, sizeof(cVertices), cIndices, std::size(cIndices));
     Mesh* meshes[11] = { &cube, &plane, &cube, &triangle, &cube, &triangle, &cube, &plane, &cube, &triangle, &cube };
     std::mt19937 rng(std::random_device{}());
     std::ranges::shuffle(meshes, rng);
-    
+    */
     //Texture texture;
     //texture.Bind(0);
     Texture texture("./assets/default16bit.png");
@@ -430,7 +435,7 @@ int main()
         glUniform1f(zoomUniform, imageSwap);
         
         // Draws
-        for (unsigned int i = 0; i < 10; i++)
+        /*for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, oPositions[i]);
@@ -440,11 +445,11 @@ int main()
             glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
             //texture.Bind(0);
             meshes[i]->Draw();
-        }
+        }*/
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        
+        meshes[0].Draw();
         
         glfwSwapBuffers(window);
         glfwPollEvents();
