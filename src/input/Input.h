@@ -16,8 +16,14 @@ private:
         double xpos,
         double ypos
     );
-    
     void OnCursorPositionCallback(double xpos, double ypos);
+    
+    static void ScrollCallback(
+        GLFWwindow* window,
+        double xoffset,
+        double yoffset
+    );
+    void OnScrollCallback(double xoffset, double yoffset);
     
     GLFWwindow* m_window;
     Camera& m_camera;

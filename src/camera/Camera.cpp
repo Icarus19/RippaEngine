@@ -91,6 +91,11 @@ void Camera::ProcessLook(float xOffset, float yOffset)
     UpdateCameraVectors();
 }
 
+void Camera::UpdateSpeed(float speed)
+{
+    Speed += speed;
+}
+
 void Camera::UpdateCameraVectors()
 {
     glm::vec3 front;

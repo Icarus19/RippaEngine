@@ -7,6 +7,7 @@ Input::Input(GLFWwindow* window, Camera& camera)
 {
     glfwSetWindowUserPointer(m_window, this);
     glfwSetCursorPosCallback(m_window, &Input::CursorPositionCallback);
+    glfwSetScrollCallback(m_window, &Input::ScrollCallback);
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
@@ -52,4 +53,18 @@ void Input::OnCursorPositionCallback(double xpos, double ypos)
         static_cast<float>(xOffset),
         static_cast<float>(yOffset)    
     );
+}
+
+void Input::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    auto* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
+    if (input != nullptr)
+    {
+        input->OnScrollCallback(xoffset, yoffset);
+    }
+}
+
+void Input::OnScrollCallback(double xOffset, double yOffset)
+{
+    m_camera.UpdateSpeed(static_cast<float>(yOffset));
 }

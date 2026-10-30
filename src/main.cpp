@@ -27,7 +27,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const float SCR_NEAR = 0.1f;
-const float SCR_FAR = 1000.0f;
+const float SCR_FAR = 10000.0f;
 const unsigned int SCR_FOV = 90;
 
 bool firstMouse = true;
@@ -102,7 +102,7 @@ int main()
     std::vector<Mesh> meshes;
     
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile("./assets/models/dragon.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile("./assets/models/sponza/sponza.obj", aiProcess_Triangulate | aiProcess_GenNormals);
     
     if (!scene)
     {
@@ -112,9 +112,7 @@ int main()
     
     for (unsigned int i = 0; i < scene->mNumMeshes; i++)
     {
-        std::cout << "ReadFile valid\n" << std::flush;
         const aiMesh* mesh = scene->mMeshes[i];
-        std::cout << "Got aiMesh pointer\n" << std::flush;
         
         std::cout << "Vertex count: "
               << mesh->mNumVertices
@@ -129,15 +127,8 @@ int main()
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         
-        std::cout << "Before vertex reserve\n" << std::flush;
-
         vertices.reserve(mesh->mNumVertices);
-
-        std::cout << "After vertex reserve\n" << std::flush;
-
         indices.reserve(mesh->mNumFaces * 3);
-
-        std::cout << "After index reserve\n" << std::flush;
         
         std::cout
             << "Loading mesh " << i + 1
@@ -330,12 +321,12 @@ int main()
         .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
         .specular = glm::vec3(1.0f, 1.0f, 1.0f),
         
-        .intensity = 0.5f,
-        .cutoff = glm::cos(glm::radians(12.5f)), // TODO: make gradual
-        .outerCutoff = glm::cos(glm::radians(25.0f)),
+        .intensity = 12.0f,
+        .cutoff = glm::cos(glm::radians(18.0f)), // TODO: make gradual
+        .outerCutoff = glm::cos(glm::radians(75.0f)),
         .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f
+        .linear = 0.0009f,
+        .quadratic = 0.00032f
     };
     Light light1{
         .position = glm::vec3(2.5f, 5.0f, 2.5f),
@@ -492,7 +483,8 @@ int main()
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        meshes[0].Draw();
+        for (unsigned int i = 0; i < meshes.size(); i++)
+            meshes[i].Draw();
         
         glfwSwapBuffers(window);
         glfwPollEvents();
