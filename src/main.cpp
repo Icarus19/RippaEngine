@@ -102,7 +102,7 @@ int main()
     std::vector<Mesh> meshes;
     
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile("./assets/models/bunny.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile("./assets/models/dragon.obj", aiProcess_Triangulate | aiProcess_GenNormals);
     
     if (!scene)
     {
@@ -112,10 +112,43 @@ int main()
     
     for (unsigned int i = 0; i < scene->mNumMeshes; i++)
     {
+        std::cout << "ReadFile valid\n" << std::flush;
         const aiMesh* mesh = scene->mMeshes[i];
+        std::cout << "Got aiMesh pointer\n" << std::flush;
+        
+        std::cout << "Vertex count: "
+              << mesh->mNumVertices
+              << '\n'
+              << std::flush;
+
+        std::cout << "Face count: "
+                  << mesh->mNumFaces
+                  << '\n'
+                  << std::flush;
         
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
+        
+        std::cout << "Before vertex reserve\n" << std::flush;
+
+        vertices.reserve(mesh->mNumVertices);
+
+        std::cout << "After vertex reserve\n" << std::flush;
+
+        indices.reserve(mesh->mNumFaces * 3);
+
+        std::cout << "After index reserve\n" << std::flush;
+        
+        std::cout
+            << "Loading mesh " << i + 1
+            << "/" << scene->mNumMeshes
+            << ": "
+            << mesh->mNumVertices
+            << " vertices, "
+            << mesh->mNumFaces
+            << " faces\n"
+            << std::flush;
+        
         std::vector<Texture> textures;
         
         for (unsigned int j = 0; j < mesh->mNumVertices; j++)
@@ -128,16 +161,26 @@ int main()
                 mesh->mVertices[j].z
             };
         
-            vertex.normal = {
-                mesh->mNormals[j].x,
-                mesh->mNormals[j].y,
-                mesh->mNormals[j].z
-            };
+            if (mesh->HasNormals())
+            {
+                vertex.normal = {
+                    mesh->mNormals[j].x,
+                    mesh->mNormals[j].y,
+                    mesh->mNormals[j].z
+                };   
+            } else {
+                vertex.normal = { 0.0f, 0.0f, 0.0f };
+            }
         
-            vertex.texCoord = {
-                mesh->mTextureCoords[0][j].x,
-                mesh->mTextureCoords[0][j].y
-            };
+            if (mesh->HasTextureCoords(0))
+            {
+                vertex.texCoord = {
+                    mesh->mTextureCoords[0][j].x,
+                    mesh->mTextureCoords[0][j].y
+                };   
+            } else {
+                vertex.texCoord = { 0.0f, 0.0f };
+            }
         
             vertices.push_back(vertex);
         }
@@ -295,9 +338,9 @@ int main()
         .quadratic = 0.032f
     };
     Light light1{
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+        .position = glm::vec3(2.5f, 5.0f, 2.5f),
         .direction = glm::vec3(1.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .ambient = glm::vec3(0.005f, 0.005f, 0.005f),
         .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
         .specular = glm::vec3(1.0f, 1.0f, 1.0f),
         
