@@ -22,7 +22,23 @@
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+static void appendMesh(
+        const std::vector<Vertex>& vertices,
+        const std::vector<unsigned int>& indices,
+        const glm::mat4& model
+);
+static std::vector<GPUVertex> gpuVertices;
+static std::vector<unsigned int> gpuIndices;
+
+void printBuf(const char* tag, GLuint id) {
+    GLint size = -1;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+    glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
+    std::cout << tag << ": id " << id
+              << " isBuffer=" << (int)glIsBuffer(id)
+              << " size=" << size << "\n";
+}
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -102,7 +118,7 @@ int main()
     std::vector<Mesh> meshes;
     
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile("./assets/models/sponza/sponza.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile("./assets/models/bunny.obj", aiProcess_Triangulate | aiProcess_GenNormals);
     
     if (!scene)
     {
@@ -416,6 +432,22 @@ int main()
     int materialShininessUniform = glGetUniformLocation(shaderProgram, "material.shininess");
     glUniform1f(materialShininessUniform, material.shininess);
     
+    unsigned int raytraceProgram = glCreateProgram();
+    Shader raytraceVertexShader("./shaders/raytracevertexshader.glsl", GL_VERTEX_SHADER);
+    Shader raytraceFragmentShader("./shaders/raytracefragmentshader.glsl", GL_FRAGMENT_SHADER);
+    glAttachShader(raytraceProgram, raytraceVertexShader.GetId());
+    glAttachShader(raytraceProgram, raytraceFragmentShader.GetId());
+    glLinkProgram(raytraceProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    glUseProgram(raytraceProgram);
+    
+    int raytraceProjectionUniform = glGetUniformLocation(raytraceProgram, "inverseProjection");
+    int raytraceViewUniform = glGetUniformLocation(raytraceProgram, "inverseView");
     
     // Enable depth
     glEnable(GL_DEPTH_TEST);
@@ -428,6 +460,35 @@ int main()
     glm::mat4 projection = glm::perspective(glm::radians((float)SCR_FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, SCR_NEAR, SCR_FAR);
     //glm::mat4 projection = glm::ortho(0.0f, SCR_WIDTH, 0.0f, SCR_HEIGHT, SCR_NEAR, SCR_FAR);
     
+    // Mesh for ray tracing
+    Mesh raytraceMesh = Mesh::CreatePlane();
+    for (const Mesh& mesh : meshes)
+    {
+        appendMesh(mesh.GetVertices(), mesh.GetIndices(), model);
+    }
+    
+    unsigned int vertexSSBO, indexSSBO;
+    glGenBuffers(1, &vertexSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexSSBO);
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        gpuVertices.size() * sizeof(GPUVertex),
+        gpuVertices.data(),
+        GL_STATIC_DRAW
+    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertexSSBO);
+    
+    glGenBuffers(1, &indexSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, indexSSBO);
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        gpuIndices.size() * sizeof(unsigned int),
+        gpuIndices.data(),
+        GL_STATIC_DRAW
+    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indexSSBO);
+    
+    glUniform1ui(glGetUniformLocation(raytraceProgram, "triCount"), (GLuint)(gpuIndices.size() / 3));
     // Static translations and rotations
     
     
@@ -480,11 +541,15 @@ int main()
             //texture.Bind(0);
             meshes[i]->Draw();
         }*/
-        model = glm::mat4(1.0f);
+        /*model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         for (unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw();
+            meshes[i].Draw();*/
+        
+        glUniformMatrix4fv(raytraceProjectionUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(projection)));
+        glUniformMatrix4fv(raytraceViewUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(view)));
+        raytraceMesh.Draw();
         
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -501,4 +566,25 @@ int main()
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+void appendMesh(
+        const std::vector<Vertex>& vertices,
+        const std::vector<unsigned int>& indices,
+        const glm::mat4& model
+    )
+{
+    unsigned int base = (unsigned int)gpuVertices.size();
+    glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(model)));
+    
+    for (const Vertex& v : vertices)
+    {
+        GPUVertex g;
+        g.position = model * glm::vec4(v.position, 1.0f);
+        g.normal = glm::vec4(glm::normalize(normalMat * v.normal), 1.0f);
+        g.texCoord = glm::vec4(v.texCoord, 0.0f, 0.0f);
+        gpuVertices.push_back(g);
+    }
+    for (unsigned int i : indices)
+        gpuIndices.push_back(base + i);
 }

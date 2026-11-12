@@ -15,6 +15,7 @@ public:
         //std::vector<Texture> texture
     );
     
+    static Mesh CreatePlane();
     static Mesh CreateCube();
     
     ~Mesh();
@@ -24,6 +25,16 @@ public:
     
     Mesh(Mesh&& other) noexcept;
     Mesh& operator=(Mesh&& other) noexcept;
+    
+    void BindRaytracingBuffers(
+        unsigned int vertexBinding = 0,
+        unsigned int indexBinding = 1
+    ) const;
+    unsigned int GetVBO() const { return m_vbo; }
+    unsigned int GetEBO() const { return m_ebo; }
+    
+    std::vector<Vertex> GetVertices() const { return m_vertices; }
+    std::vector<unsigned int> GetIndices() const { return m_indices; }
     
     void Draw() const;
     
@@ -37,6 +48,7 @@ private:
     unsigned int m_vao = 0;
     unsigned int m_vbo = 0;
     unsigned int m_ebo = 0;
+    unsigned int m_raytracingVBO = 0;
     
     std::size_t m_indexCount = 0;
     

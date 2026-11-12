@@ -3,8 +3,6 @@
 #include <glad/glad.h>
 #include <utility>
 
-#include <limits>
-#include <stdexcept>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)//, std::vector<Texture> textures)
     : m_vertices(std::move(vertices)),
@@ -13,6 +11,23 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)//, s
       m_indexCount(m_indices.size())
 {
     SetupMesh();
+}
+
+Mesh Mesh::CreatePlane()
+{
+    std::vector<Vertex> vertices = {
+        // Position                                     Normal                                      TexCoord
+        // Front
+        { {-0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {0.0f, 0.0f} },
+        { { 0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f, 0.0f} },
+        { { 0.5f,  0.5f,  0.5f}, { 0.0f, 0.0f,  1.0f}, {1.0f, 1.0f} },
+        { {-0.5f,  0.5f,  0.5f}, { 0.0f, 0.0f,  1.0f}, {0.0f, 1.0f} },
+    };  
+    std::vector<unsigned int> indices = {
+        0, 1, 2,        2, 3, 0
+    };
+    
+    return Mesh(std::move(vertices), std::move(indices));//, std::move(m_textures));
 }
 
 Mesh Mesh::CreateCube()
@@ -24,40 +39,6 @@ Mesh Mesh::CreateCube()
         { { 0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f, 0.0f} },
         { { 0.5f,  0.5f,  0.5f}, { 0.0f, 0.0f,  1.0f}, {1.0f, 1.0f} },
         { {-0.5f,  0.5f,  0.5f}, { 0.0f, 0.0f,  1.0f}, {0.0f, 1.0f} },
-        /*-0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-  
-        // Back
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
-
-        // Left
-        -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-  
-        // Right
-         0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
- 
-        // Top
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
-    
-        // Bottom
-        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,*/
     };  
     std::vector<unsigned int> indices = {
         0, 1, 2,        2, 3, 0
@@ -90,6 +71,23 @@ Mesh::Mesh(Mesh&& other) noexcept
     other.m_vbo = 0;
     other.m_ebo = 0;
     other.m_indexCount = 0;
+}
+
+void Mesh::BindRaytracingBuffers(
+    GLuint vertexBinding,
+    GLuint indexBinding
+) const
+{
+    glBindBufferBase(
+        GL_SHADER_STORAGE_BUFFER,
+        vertexBinding,
+        m_vbo
+    );    
+    glBindBufferBase(
+        GL_SHADER_STORAGE_BUFFER,
+        indexBinding,
+        m_ebo
+    );
 }
     
 void Mesh::Draw() const
