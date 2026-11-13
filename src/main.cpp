@@ -42,8 +42,8 @@ void printBuf(const char* tag, GLuint id) {
               << " size=" << size << "\n";
 }
 
-const unsigned int SCR_WIDTH = 400;
-const unsigned int SCR_HEIGHT = 300;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 const float SCR_NEAR = 0.1f;
 const float SCR_FAR = 10000.0f;
 const unsigned int SCR_FOV = 90;
@@ -121,7 +121,7 @@ int main()
     std::vector<Mesh> meshes;
     
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile("./assets/models/bunny.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile("./assets/models/sponza/sponza.obj", aiProcess_Triangulate | aiProcess_GenNormals);
     
     if (!scene)
     {
@@ -490,7 +490,6 @@ int main()
         GL_STATIC_DRAW
     );
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indexSSBO);
-    glUniform1ui(glGetUniformLocation(raytraceProgram, "triCount"), (uint32_t)(bvh.GetIndices().size() / 3));
     
     glGenBuffers(1, &nodeSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, nodeSSBO);
@@ -536,7 +535,9 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, wireMesh.size() * sizeof(glm::vec3), wireMesh.data(), GL_DYNAMIC_DRAW);
     int wireMeshCount = (GLsizei)(wireMesh.size());
     
-    unsigned int BVHViewProjectionUniform = glGetUniformLocation(wireMeshProgram, "viewProjection");
+    int BVHViewProjectionUniform = glGetUniformLocation(wireMeshProgram, "viewProjection");
+    int BVHTimeUniform = glGetUniformLocation(raytraceProgram, "time");
+    glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
     
     // Static translations and rotations
     
@@ -596,12 +597,13 @@ int main()
         model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         for (unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw();*/
-        
+            meshes[i].Draw();
+        */
         // Enable depth
         glEnable(GL_DEPTH_TEST);
         glUniformMatrix4fv(raytraceProjectionUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(projection)));
         glUniformMatrix4fv(raytraceViewUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(view)));
+        glUniform1f(BVHTimeUniform, time);
         raytraceMesh.Draw();
         
         // Draw Debug
