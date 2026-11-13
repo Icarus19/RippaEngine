@@ -12,8 +12,14 @@ struct Vertex {
     vec4 texCoord;
 };
 
+struct BVHNode {
+    vec3 boundsMin; uint leftFirst;
+    vec3 boundsMax; uint triCount;
+};
+
 layout(std430, binding = 0) readonly buffer VertexBuffer { Vertex vertices[]; };
 layout(std430, binding = 1) readonly buffer IndexBuffer { uint indices[]; };
+layout(std430, binding = 2) readonly buffer NodeBuffer { BVHNode nodes[]; };
 
 uniform uint triCount;
 

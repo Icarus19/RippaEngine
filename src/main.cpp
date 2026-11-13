@@ -19,6 +19,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "renderer/BVH.h"
+
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
 // Defining funtions
@@ -55,6 +57,7 @@ float pitch = 0.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float imageSwap = 0.1f;
+unsigned int debugDepth = 10; // TODO: make interface to change
 
 // TODO: radius with falloff
 // TODO: also, light class with different kinds
@@ -449,9 +452,6 @@ int main()
     int raytraceProjectionUniform = glGetUniformLocation(raytraceProgram, "inverseProjection");
     int raytraceViewUniform = glGetUniformLocation(raytraceProgram, "inverseView");
     
-    // Enable depth
-    glEnable(GL_DEPTH_TEST);
-    
     // Matrix spaces
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
@@ -467,7 +467,10 @@ int main()
         appendMesh(mesh.GetVertices(), mesh.GetIndices(), model);
     }
     
-    unsigned int vertexSSBO, indexSSBO;
+    // Optimize raytrace with BVH
+    BVH bvh(gpuVertices, gpuIndices);
+    
+    unsigned int vertexSSBO, indexSSBO, nodeSSBO;
     glGenBuffers(1, &vertexSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexSSBO);
     glBufferData(
@@ -478,17 +481,63 @@ int main()
     );
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertexSSBO);
     
-    glGenBuffers(1, &indexSSBO);
+    glGenBuffers(1, &indexSSBO); // Use bvh instead of our old gpuIndices
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, indexSSBO);
     glBufferData(
         GL_SHADER_STORAGE_BUFFER,
-        gpuIndices.size() * sizeof(unsigned int),
-        gpuIndices.data(),
+        bvh.GetIndices().size() * sizeof(unsigned int),
+        bvh.GetIndices().data(),
         GL_STATIC_DRAW
     );
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indexSSBO);
+    glUniform1ui(glGetUniformLocation(raytraceProgram, "triCount"), (uint32_t)(bvh.GetIndices().size() / 3));
     
-    glUniform1ui(glGetUniformLocation(raytraceProgram, "triCount"), (GLuint)(gpuIndices.size() / 3));
+    glGenBuffers(1, &nodeSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, nodeSSBO);
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        bvh.GetNodes().size() * sizeof(BVHNode),
+        bvh.GetNodes().data(),
+        GL_STATIC_DRAW
+    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nodeSSBO);
+    
+    // Get wiremesh for bvh debugging
+    unsigned int wireMeshProgram = glCreateProgram();
+    Shader BVHvertexShader("./shaders/bvhvertexshader.glsl", GL_VERTEX_SHADER);
+    Shader BVHfragmentShader("./shaders/bvhfragmentshader.glsl", GL_FRAGMENT_SHADER);
+	
+    glAttachShader(wireMeshProgram, BVHvertexShader.GetId());
+    glAttachShader(wireMeshProgram, BVHfragmentShader.GetId());
+    glLinkProgram(wireMeshProgram);
+    glGetProgramiv(wireMeshProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(wireMeshProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    glUseProgram(wireMeshProgram);
+    
+    unsigned int wireMeshVAO, wireMeshVBO;
+    
+    glGenVertexArrays(1, &wireMeshVAO);
+    glGenBuffers(1, &wireMeshVBO);
+    
+    glBindVertexArray(wireMeshVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, wireMeshVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
+    
+    
+    // TODO: Can be repeated at runtime when depth changes
+    std::vector<glm::vec3> wireMesh = bvh.GetBoxLines(debugDepth);
+    glBindBuffer(GL_ARRAY_BUFFER, wireMeshVBO);
+    glBufferData(GL_ARRAY_BUFFER, wireMesh.size() * sizeof(glm::vec3), wireMesh.data(), GL_DYNAMIC_DRAW);
+    int wireMeshCount = (GLsizei)(wireMesh.size());
+    
+    unsigned int BVHViewProjectionUniform = glGetUniformLocation(wireMeshProgram, "viewProjection");
+    
     // Static translations and rotations
     
     
@@ -499,6 +548,8 @@ int main()
         float time = glfwGetTime();
         deltaTime = time - lastFrame;
         lastFrame = time;
+        
+        glUseProgram(raytraceProgram);
         
         // input
         input.ProcessKeyboard(deltaTime);
@@ -547,9 +598,21 @@ int main()
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw();*/
         
+        // Enable depth
+        glEnable(GL_DEPTH_TEST);
         glUniformMatrix4fv(raytraceProjectionUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(projection)));
         glUniformMatrix4fv(raytraceViewUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(view)));
         raytraceMesh.Draw();
+        
+        // Draw Debug
+        if (debugDepth > 0)
+        {
+            glUseProgram(wireMeshProgram);
+            glUniformMatrix4fv(BVHViewProjectionUniform, 1, GL_FALSE, glm::value_ptr(projection * view));
+            glDisable(GL_DEPTH_TEST);
+            glBindVertexArray(wireMeshVAO);
+            glDrawArrays(GL_LINES, 0, wireMeshCount);
+        }
         
         glfwSwapBuffers(window);
         glfwPollEvents();
