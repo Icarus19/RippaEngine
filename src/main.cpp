@@ -42,8 +42,8 @@ void printBuf(const char* tag, GLuint id) {
               << " size=" << size << "\n";
 }
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 400;
+const unsigned int SCR_HEIGHT = 300;
 const float SCR_NEAR = 0.1f;
 const float SCR_FAR = 10000.0f;
 const unsigned int SCR_FOV = 90;
@@ -57,7 +57,7 @@ float pitch = 0.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float imageSwap = 0.1f;
-unsigned int debugDepth = 10; // TODO: make interface to change
+unsigned int debugDepth = 0; // TODO: make interface to change
 
 // TODO: radius with falloff
 // TODO: also, light class with different kinds
