@@ -8,7 +8,8 @@
 #include <algorithm>
 #include <cmath>
 
-Texture::Texture(const std::string& path)
+Texture::Texture(const std::string& path, ColorSpace cs)
+	: m_path(path)
 {
 	ImageData image = ImageLoader::Load(path);
 
@@ -134,6 +135,25 @@ Texture::~Texture()
 	{
 		glDeleteTextures(1, &m_id);
 	}
+}
+
+Texture::Texture(Texture&& other) noexcept
+	: m_id(other.m_id), m_path(std::move(other.m_path))
+{
+	other.m_id = 0;
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+	if (this != &other)
+	{
+		if (m_id != 0) glDeleteTextures(1, &m_id);
+		m_id = other.m_id;
+		m_path = std::move(other.m_path);
+		other.m_id = 0;
+	}
+	
+	return *this;
 }
 
 void Texture::Bind(unsigned int slot) const

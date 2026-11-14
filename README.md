@@ -7,3 +7,8 @@ CONTROLS:
 Mouse for camera \
 WASD to move around \
 Scroll to change speed
+
+
+Ray tracing, currently no GI and imported textures are not used
+
+![raytracetest.gif](assets/readme/raytracetest.gif)

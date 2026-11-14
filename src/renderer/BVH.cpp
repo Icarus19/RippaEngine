@@ -5,7 +5,7 @@
 
 BVH::BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>& indices)
 {
-    const uint32_t triCount = (uint32_t)vertices.size() / 3;
+    const uint32_t triCount = (uint32_t)indices.size() / 3;
     
     m_tris.resize(triCount);
     m_order.resize(triCount);

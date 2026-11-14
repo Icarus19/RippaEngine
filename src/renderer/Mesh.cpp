@@ -3,11 +3,13 @@
 #include <glad/glad.h>
 #include <utility>
 
+#include "Material.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)//, std::vector<Texture> textures)
+
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, unsigned int materialIndex)
     : m_vertices(std::move(vertices)),
       m_indices(std::move(indices)),
-      //m_textures(std::move(textures)),
+      m_materialIndex(materialIndex),
       m_indexCount(m_indices.size())
 {
     SetupMesh();
@@ -27,7 +29,7 @@ Mesh Mesh::CreatePlane()
         0, 1, 2,        2, 3, 0
     };
     
-    return Mesh(std::move(vertices), std::move(indices));//, std::move(m_textures));
+    return Mesh(std::move(vertices), std::move(indices), 0);
 }
 
 Mesh Mesh::CreateCube()
@@ -44,7 +46,7 @@ Mesh Mesh::CreateCube()
         0, 1, 2,        2, 3, 0
     };
     
-    return Mesh(std::move(vertices), std::move(indices));//, std::move(m_textures));
+    return Mesh(std::move(vertices), std::move(indices), 0);
 }
 
 Mesh::~Mesh()

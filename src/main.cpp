@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -20,6 +21,8 @@
 #include <assimp/postprocess.h>
 
 #include "renderer/BVH.h"
+#include "renderer/Material.h"
+#include "assets/MaterialLoader.h"
 
 // TODO: Create a Shader class that takes one shader file with both vertex and fragment
 
@@ -77,13 +80,6 @@ struct Light
     float quadratic;
 };
 
-struct Material
-{
-    Texture &diffuse;
-    glm::vec3 specular;
-    float shininess;
-};
-
 // Usually main has to be last, but because we declare our functions at the top we can define main first
 int main()
 {
@@ -119,14 +115,33 @@ int main()
     }
     
     std::vector<Mesh> meshes;
+    std::string path = "./assets/models/sponza/sponza.obj";
     
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile("./assets/models/sponza/sponza.obj", aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals);
     
     if (!scene)
     {
         std::cerr << "Assimp failed: "
         << importer.GetErrorString() << std::endl;
+        return 0;
+    }
+    
+    
+    std::filesystem::path modelDir = std::filesystem::path(path).parent_path();
+    
+    std::vector<Material> materials(scene->mNumMaterials);
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++)
+    {
+        const aiMaterial* m = scene->mMaterials[i];
+        MaterialLoader::LoadSlot(modelDir, m, aiTextureType_DIFFUSE, TextureSlot::Albedo, ColorSpace::SRGB, materials[i]);
+        MaterialLoader::LoadSlot(modelDir, m, aiTextureType_HEIGHT, TextureSlot::Normal, ColorSpace::Linear, materials[i]);
+        MaterialLoader::LoadSlot(modelDir, m, aiTextureType_SPECULAR, TextureSlot::Specular, ColorSpace::Linear, materials[i]);
+        MaterialLoader::LoadSlot(modelDir, m, aiTextureType_OPACITY, TextureSlot::Alpha, ColorSpace::Linear, materials[i]);
+        
+        aiColor3D c;
+        if(m->Get(AI_MATKEY_COLOR_DIFFUSE, c) == AI_SUCCESS) materials[i].albedo = { c.r, c.g, c.b };
+        if(m->Get(AI_MATKEY_COLOR_EMISSIVE, c) == AI_SUCCESS) materials[i].emission = { c.r, c.g, c.b };
     }
     
     for (unsigned int i = 0; i < scene->mNumMeshes; i++)
@@ -158,8 +173,6 @@ int main()
             << mesh->mNumFaces
             << " faces\n"
             << std::flush;
-        
-        std::vector<Texture> textures;
         
         for (unsigned int j = 0; j < mesh->mNumVertices; j++)
         {
@@ -205,7 +218,7 @@ int main()
             }
         }
     
-        meshes.emplace_back(std::move(vertices), std::move(indices));//, textures);
+        meshes.emplace_back(std::move(vertices), std::move(indices), mesh->mMaterialIndex);
     }
     
 
@@ -361,11 +374,6 @@ int main()
         .linear = 0.09f,
         .quadratic = 0.032f
     };
-    Material material(
-        texture, 
-        glm::vec3(0.5f, 0.5f, 0.5f), 
-        32.0f
-    );
     
     // Matrices uniforms
     int modelUniform = glGetUniformLocation(shaderProgram, "model");
@@ -429,11 +437,11 @@ int main()
     // Material
     int materialDiffuseUniform = glGetUniformLocation(shaderProgram, "material.diffuse");
     glUniform1i(materialDiffuseUniform, 0);
-    material.diffuse.Bind(0);
+    texture.Bind(0);
     int materialSpecularUniform = glGetUniformLocation(shaderProgram, "material.specular");
-    glUniform3fv(materialSpecularUniform, 1, glm::value_ptr(material.specular));
+    glUniform3fv(materialSpecularUniform, 1, glm::value_ptr(glm::vec3(0.5f)));
     int materialShininessUniform = glGetUniformLocation(shaderProgram, "material.shininess");
-    glUniform1f(materialShininessUniform, material.shininess);
+    glUniform1f(materialShininessUniform, 32.0f);
     
     unsigned int raytraceProgram = glCreateProgram();
     Shader raytraceVertexShader("./shaders/raytracevertexshader.glsl", GL_VERTEX_SHADER);

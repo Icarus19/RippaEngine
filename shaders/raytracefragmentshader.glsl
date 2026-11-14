@@ -155,7 +155,7 @@ void main()
     bool shadowed = intersectScene(position + n * 1e-3, L, dist, true, sh);
 
     vec3 lit = shadowed ? vec3(0.0) : vec3(0.87) * ndotl / attenuation;
-    vec3 ambient = vec3(0.05);
+    vec3 ambient = vec3(0.01);
 
     color = vec4(albedo * (ambient + lit), 1.0);
     //float pulse = abs(sin(time));

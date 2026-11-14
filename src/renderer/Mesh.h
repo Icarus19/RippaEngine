@@ -11,8 +11,8 @@ class Mesh
 public:
     Mesh(
         std::vector<Vertex> vertices,
-        std::vector<unsigned int> indices
-        //std::vector<Texture> texture
+        std::vector<unsigned int> indices,
+        unsigned int materialIndex
     );
     
     static Mesh CreatePlane();
@@ -42,7 +42,7 @@ private:
     // Mesh data
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
-    std::vector<Texture> m_textures;
+    unsigned int m_materialIndex;
     
     // Render data
     unsigned int m_vao = 0;
