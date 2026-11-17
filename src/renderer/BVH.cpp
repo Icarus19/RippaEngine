@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <glm/common.hpp>
 
-BVH::BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>& indices)
+BVH::BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>& indices, const std::vector<uint32_t>& triMaterials)
 {
     const uint32_t triCount = (uint32_t)indices.size() / 3;
     
@@ -25,12 +25,15 @@ BVH::BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>
         Build(0, triCount, 0);
     
     m_indices.resize(indices.size());
+    m_triMaterials.resize(triCount);
     for (uint32_t i = 0; i < triCount; i++)
     {
         uint32_t src = m_order[i];
         m_indices[3*i + 0] = indices[3*src + 0];
         m_indices[3*i + 1] = indices[3*src + 1];
         m_indices[3*i + 2] = indices[3*src + 2];
+        
+        m_triMaterials[i] = triMaterials[src];
     }
 }
 

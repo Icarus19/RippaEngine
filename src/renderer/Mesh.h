@@ -35,6 +35,7 @@ public:
     
     std::vector<Vertex> GetVertices() const { return m_vertices; }
     std::vector<unsigned int> GetIndices() const { return m_indices; }
+    unsigned int GetMaterialIndex() const { return m_materialIndex; }
     
     void Draw() const;
     
@@ -42,7 +43,7 @@ private:
     // Mesh data
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
-    unsigned int m_materialIndex;
+    unsigned int m_materialIndex = 0;
     
     // Render data
     unsigned int m_vao = 0;

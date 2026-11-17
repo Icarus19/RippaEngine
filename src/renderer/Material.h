@@ -15,6 +15,12 @@ enum class TextureSlot : unsigned char
     Count // Not a map, used for list size
 };
 
+struct GPUMaterial {
+    glm::vec3 albedo;    float roughness;
+    glm::vec3 emission;  float metallic;
+    uint64_t albedoTex, normalTex, specularTex, alphaTex;   // 0 = no texture
+};
+
 class Material
 {
 public:

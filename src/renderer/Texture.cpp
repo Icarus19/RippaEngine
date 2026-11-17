@@ -2,6 +2,7 @@
 #include "assets/ImageLoader.h"
 
 #include <glad/glad.h>
+#include <iostream>
 #include <stb_image.h>
 
 #include <stdexcept>
@@ -160,4 +161,14 @@ void Texture::Bind(unsigned int slot) const
 {
 	glActiveTexture(GL_TEXTURE0+slot);
 	glBindTexture(GL_TEXTURE_2D, m_id);
+}
+
+GLuint64 Texture::GetHandle() const
+{
+	if (!GLAD_GL_ARB_bindless_texture) { std::cerr << "No bindless textures\n"; std::exit(1); }
+	
+	GLuint64 h = glGetTextureHandleARB(m_id);
+	if (!glIsTextureHandleResidentARB(h))
+		glMakeTextureHandleResidentARB(h);
+	return h;
 }

@@ -31,10 +31,12 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 static void appendMesh(
         const std::vector<Vertex>& vertices,
         const std::vector<unsigned int>& indices,
+        uint32_t materialIndex,
         const glm::mat4& model
 );
 static std::vector<GPUVertex> gpuVertices;
 static std::vector<unsigned int> gpuIndices;
+static std::vector<uint32_t> gpuTriMaterials;
 
 void printBuf(const char* tag, GLuint id) {
     GLint size = -1;
@@ -129,8 +131,8 @@ int main()
     
     
     std::filesystem::path modelDir = std::filesystem::path(path).parent_path();
-    
     std::vector<Material> materials(scene->mNumMaterials);
+    
     for (unsigned int i = 0; i < scene->mNumMaterials; i++)
     {
         const aiMaterial* m = scene->mMaterials[i];
@@ -142,6 +144,18 @@ int main()
         aiColor3D c;
         if(m->Get(AI_MATKEY_COLOR_DIFFUSE, c) == AI_SUCCESS) materials[i].albedo = { c.r, c.g, c.b };
         if(m->Get(AI_MATKEY_COLOR_EMISSIVE, c) == AI_SUCCESS) materials[i].emission = { c.r, c.g, c.b };
+    }
+    
+    std::vector<GPUMaterial> gpuMats;
+    for (const Material& m : materials)
+    {
+        auto handle = [&](TextureSlot s) -> uint64_t {
+            const Texture* t = m.GetTexture(s);
+            return t ? t->GetHandle() : 0;
+        };
+        gpuMats.push_back({ m.albedo, m.roughness, m.emission, m.metallic,
+                        handle(TextureSlot::Albedo), handle(TextureSlot::Normal),
+                        handle(TextureSlot::Specular), handle(TextureSlot::Alpha) });
     }
     
     for (unsigned int i = 0; i < scene->mNumMeshes; i++)
@@ -472,11 +486,12 @@ int main()
     Mesh raytraceMesh = Mesh::CreatePlane();
     for (const Mesh& mesh : meshes)
     {
-        appendMesh(mesh.GetVertices(), mesh.GetIndices(), model);
+        appendMesh(mesh.GetVertices(), mesh.GetIndices(), mesh.GetMaterialIndex(), model);
     }
     
+    std::cout << std::endl;
     // Optimize raytrace with BVH
-    BVH bvh(gpuVertices, gpuIndices);
+    BVH bvh(gpuVertices, gpuIndices, gpuTriMaterials);
     
     unsigned int vertexSSBO, indexSSBO, nodeSSBO;
     glGenBuffers(1, &vertexSSBO);
@@ -508,6 +523,28 @@ int main()
         GL_STATIC_DRAW
     );
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nodeSSBO);
+    
+    // Material buffers
+    unsigned int triMatSSBO, matSSBO;
+    glGenBuffers(1, &triMatSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, triMatSSBO);
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        bvh.GetTriMaterials().size() * sizeof(uint32_t),
+        bvh.GetTriMaterials().data(),
+        GL_STATIC_DRAW
+    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, triMatSSBO);
+    
+    glGenBuffers(1, & matSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, matSSBO);
+    glBufferData(
+        GL_SHADER_STORAGE_BUFFER,
+        gpuMats.size() * sizeof(GPUMaterial),
+        gpuMats.data(),
+        GL_STATIC_DRAW
+    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, matSSBO);
     
     // Get wiremesh for bvh debugging
     unsigned int wireMeshProgram = glCreateProgram();
@@ -545,7 +582,7 @@ int main()
     
     int BVHViewProjectionUniform = glGetUniformLocation(wireMeshProgram, "viewProjection");
     int BVHTimeUniform = glGetUniformLocation(raytraceProgram, "time");
-    glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
+    //glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
     
     // Static translations and rotations
     
@@ -644,6 +681,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void appendMesh(
         const std::vector<Vertex>& vertices,
         const std::vector<unsigned int>& indices,
+        uint32_t materialIndex,
         const glm::mat4& model
     )
 {
@@ -658,6 +696,9 @@ void appendMesh(
         g.texCoord = glm::vec4(v.texCoord, 0.0f, 0.0f);
         gpuVertices.push_back(g);
     }
+    
     for (unsigned int i : indices)
         gpuIndices.push_back(base + i);
+    
+    gpuTriMaterials.insert(gpuTriMaterials.end(), indices.size() / 3, materialIndex);
 }

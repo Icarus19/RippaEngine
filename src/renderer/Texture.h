@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <glad/glad.h>
 
 enum class ColorSpace
 {
@@ -23,6 +24,8 @@ public:
     Texture& operator=(Texture&& other) noexcept;
     
     void Bind(unsigned int slot = 0) const;
+    
+    GLuint64 GetHandle() const;
     
     unsigned int GetID() const { return m_id; }
     

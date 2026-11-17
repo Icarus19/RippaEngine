@@ -64,6 +64,7 @@ Mesh::~Mesh()
 Mesh::Mesh(Mesh&& other) noexcept
     : m_vertices(std::move(other.m_vertices)),
     m_indices(std::move(other.m_indices)),
+    m_materialIndex(std::move(other.m_materialIndex)),
     m_vbo(std::move(other.m_vao)),
     m_ebo(std::move(other.m_vbo)),
     m_vao(std::move(other.m_ebo)),

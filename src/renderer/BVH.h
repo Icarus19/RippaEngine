@@ -14,12 +14,14 @@ static_assert(sizeof(BVHNode) == 32, "Enforce std430 layout");
 class BVH
 {
 public:
-    BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>& indices);
+    BVH(const std::vector<GPUVertex>& vertices, const std::vector<unsigned int>& indices, const std::vector<uint32_t>& triMaterials);
     
     ~BVH();
     
     const std::vector<BVHNode>& GetNodes() const { return m_nodes; }
     const std::vector<unsigned int>& GetIndices() const { return m_indices; }
+    const std::vector<uint32_t>& GetTriMaterials() const { return m_triMaterials; }
+    
     std::vector<glm::vec3> GetBoxLines(uint32_t depth) const;
     
 private:
@@ -34,6 +36,7 @@ private:
     std::vector<uint32_t> m_order;
     std::vector<BVHNode> m_nodes;
     std::vector<unsigned int> m_indices;
+    std::vector<uint32_t> m_triMaterials;
     std::vector<uint32_t> m_depths;
     
     uint32_t Build(uint32_t begin, uint32_t end, uint32_t depth);
