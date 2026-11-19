@@ -15,6 +15,4 @@ public:
 private:
     unsigned int m_id;
     GLenum m_type;
-
-    static std::string LoadShaderSource(const char* path);
 };

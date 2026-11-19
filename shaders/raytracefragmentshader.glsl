@@ -42,16 +42,7 @@ struct Hit {
 bool hasTexture(uvec2 h) { return h.x != 0u || h.y != 0u; }
 
 // ro is Ray origin, and rd is Ray Direction
-float intersectAABB(vec3 ro, vec3 invDir, vec3 bmin, vec3 bmax, float tMax)
-{
-    vec3 t0 = (bmin - ro) * invDir;
-    vec3 t1 = (bmax - ro) * invDir;
-    vec3 tNearV = min(t0, t1);
-    vec3 tFarV = max(t0, t1);
-    float tNear = max(max(tNearV.x, tNearV.y), max(tNearV.z, 0.0));
-    float tFar = min(min(tFarV.x, tFarV.y), tFarV.z);
-    return (tNear <= tFar && tNear < tMax) ? tNear : 1e30;
-}
+float intersectAABB(vec3 ro, vec3 invDir, vec3 bmin, vec3 bmax, float tMax);
 
 bool intersectScene(vec3 ro, vec3 rd, float tMax, bool anyHit, out Hit h)
 {
@@ -145,6 +136,7 @@ void main()
     Vertex c = vertices[indices[3u*h.tri + 2u]];
     float w = 1.0 - h.u - h.v;
     GPUMaterial mat = materials[triMaterials[h.tri]];
+    float lod = log2(max(h.t * 0.025, 1.0));
 
     vec3 dp1 = b.position.xyz - a.position.xyz;
     vec3 dp2 = c.position.xyz - a.position.xyz;
@@ -166,18 +158,18 @@ void main()
             vec3 B = (dp2 * duv1.y - dp1 * duv2.y) * r;
             T = normalize(T - n * dot(n, T));
             if(dot(cross(n, T), B) < 0.0) B = -cross(n, T); else B = cross(n, T);
-            vec3 tn = textureLod(sampler2D(mat.normalTexture), uv, 0.0).rgb * 2.0 - 1.0;
+            vec3 tn = textureLod(sampler2D(mat.normalTexture), uv, lod).rgb * 2.0 - 1.0;
             n - normalize(T * tn.x + B * tn.y + n * tn.z);
         }
     }
 
     vec3 albedo = mat.albedo;
     if(mat.albedoTexture != uvec2(0))
-        albedo *= textureLod(sampler2D(mat.albedoTexture), uv, 0.0).rgb;
+        albedo *= textureLod(sampler2D(mat.albedoTexture), uv, lod).rgb;
 
     float specStrength = 0.0;
     if(hasTexture(mat.specularTexture))
-        specStrength = textureLod(sampler2D(mat.specularTexture), uv, 0.0).r;
+        specStrength = textureLod(sampler2D(mat.specularTexture), uv, lod).r;
 
     float roughness = clamp(mat.roughness, 0.05, 1.0);
 
@@ -207,9 +199,9 @@ void main()
     vec3 lit = shadowed ? vec3(0.0) : vec3(0.87) * (diffuse + spec) / attenuation;
     vec3 ambient = vec3(0.01);
 
-    color = vec4(albedo * (ambient + lit), 1.0);
+    //color = vec4(albedo * (ambient + lit), 1.0);
     //color = vec4(n * 0.5 + 0.5, 1.0);
-    //color = vec4(mat.albedo, 1.0);
+    color = vec4(albedo, 1.0);
     //float pulse = abs(sin(time));
     //color = vec4(pulse, 0.0, 0.0, 1.0);
 }

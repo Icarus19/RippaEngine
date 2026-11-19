@@ -38,6 +38,7 @@ add_executable(RippaEngine
         src/renderer/Material.cpp
         src/assets/ImageLoader.cpp
         src/assets/MaterialLoader.cpp
+        src/assets/ShaderLibrary.cpp
         src/renderer/BVH.cpp
 )
 

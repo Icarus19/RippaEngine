@@ -4,6 +4,8 @@
 #include <fstream>
 #include <random>
 #include <string>
+#include <assets/ShaderLibrary.h>
+
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
@@ -63,6 +65,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float imageSwap = 0.1f;
 unsigned int debugDepth = 0; // TODO: make interface to change
+static unsigned int Frames = 0;
 
 // TODO: radius with falloff
 // TODO: also, light class with different kinds
@@ -237,6 +240,7 @@ int main()
     
 
     unsigned int shaderProgram = glCreateProgram();
+    ShaderLibrary::Init("./shaders/helpers/common.glsl");
     Shader vertexShader("./shaders/vertexshader.glsl", GL_VERTEX_SHADER);
     Shader fragmentShader("./shaders/fragmentshader.glsl", GL_FRAGMENT_SHADER);
 	
@@ -594,6 +598,7 @@ int main()
         float time = glfwGetTime();
         deltaTime = time - lastFrame;
         lastFrame = time;
+        Frames++;
         
         glUseProgram(raytraceProgram);
         
@@ -664,6 +669,8 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    
+    std::cout << "Average fps: " << Frames / glfwGetTime() << std::endl;
     
     glfwDestroyWindow(window);
     
