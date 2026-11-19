@@ -1,14 +1,40 @@
 #pragma once
+
+#include "renderer/Shader.h"
+
 #include <string>
+#include <vector>
+#include <filesystem>
+#include <unordered_set>
+#include <unordered_map>
+
 
 class ShaderLibrary
 {
 public:
-    static void Init(const char* path);
-    static const std::string& GetSource() { return m_helperSource; }
-    
-    static std::string LoadShaderSource(const char* path);
-    
+    static ShaderSource LoadShaderSource(const std::filesystem::path& path);
+
 private:
-    static std::string m_helperSource;
+    struct PreprocessContext
+    {
+        std::filesystem::path rootDirectory;
+        
+        std::unordered_set<std::string> activeIncludes;
+        std::unordered_set<std::string> pragmaOnceFiles;
+        
+        std::unordered_map<std::string, int> sourceIDs;
+        
+        std::vector<std::filesystem::path> sourceFiles;
+        std::vector<std::string> extensions;
+    };
+    
+    static int GetSourceID(
+        const std::filesystem::path& path,
+        PreprocessContext& context
+    );
+    static std::string PreProcessShader(
+        const std::filesystem::path& path,
+        PreprocessContext& context,
+        bool isRoot
+    );
 };

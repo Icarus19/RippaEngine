@@ -240,9 +240,8 @@ int main()
     
 
     unsigned int shaderProgram = glCreateProgram();
-    ShaderLibrary::Init("./shaders/helpers/common.glsl");
-    Shader vertexShader("./shaders/vertexshader.glsl", GL_VERTEX_SHADER);
-    Shader fragmentShader("./shaders/fragmentshader.glsl", GL_FRAGMENT_SHADER);
+    Shader vertexShader("./shaders/vertex/vertexshader.glsl", GL_VERTEX_SHADER);
+    Shader fragmentShader("./shaders/fragments/fragmentshader.glsl", GL_FRAGMENT_SHADER);
 	
     glAttachShader(shaderProgram, vertexShader.GetId());
     glAttachShader(shaderProgram, fragmentShader.GetId());
@@ -362,7 +361,7 @@ int main()
     // Changing program doesn't unbind any uniforms so we can change freely
     //glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
     //glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
-    
+    /*
     // Let there be light
     Light light{
         .position = camera.GetPosition(), // lets use camera position for light
@@ -460,10 +459,10 @@ int main()
     glUniform3fv(materialSpecularUniform, 1, glm::value_ptr(glm::vec3(0.5f)));
     int materialShininessUniform = glGetUniformLocation(shaderProgram, "material.shininess");
     glUniform1f(materialShininessUniform, 32.0f);
-    
+    */
     unsigned int raytraceProgram = glCreateProgram();
-    Shader raytraceVertexShader("./shaders/raytracevertexshader.glsl", GL_VERTEX_SHADER);
-    Shader raytraceFragmentShader("./shaders/raytracefragmentshader.glsl", GL_FRAGMENT_SHADER);
+    Shader raytraceVertexShader("./shaders/vertex/raytracevertexshader.glsl", GL_VERTEX_SHADER);
+    Shader raytraceFragmentShader("./shaders/fragments/raytracefragmentshader.glsl", GL_FRAGMENT_SHADER);
     glAttachShader(raytraceProgram, raytraceVertexShader.GetId());
     glAttachShader(raytraceProgram, raytraceFragmentShader.GetId());
     glLinkProgram(raytraceProgram);
@@ -552,8 +551,8 @@ int main()
     
     // Get wiremesh for bvh debugging
     unsigned int wireMeshProgram = glCreateProgram();
-    Shader BVHvertexShader("./shaders/bvhvertexshader.glsl", GL_VERTEX_SHADER);
-    Shader BVHfragmentShader("./shaders/bvhfragmentshader.glsl", GL_FRAGMENT_SHADER);
+    Shader BVHvertexShader("./shaders/vertex/bvhvertexshader.glsl", GL_VERTEX_SHADER);
+    Shader BVHfragmentShader("./shaders/fragments/bvhfragmentshader.glsl", GL_FRAGMENT_SHADER);
 	
     glAttachShader(wireMeshProgram, BVHvertexShader.GetId());
     glAttachShader(wireMeshProgram, BVHfragmentShader.GetId());
@@ -588,6 +587,17 @@ int main()
     int BVHTimeUniform = glGetUniformLocation(raytraceProgram, "time");
     //glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
     
+    // Radiance Cascades Compute shader
+    unsigned int rcProgram = glCreateProgram();
+    Shader rcShader("./shaders/computes/radiancecascades.glsl", GL_COMPUTE_SHADER);
+    glAttachShader(rcProgram, rcShader.GetId());
+    glLinkProgram(rcProgram);
+    
+    glUseProgram(rcProgram);
+    glDispatchCompute(8, 8, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    
+    
     // Static translations and rotations
     
     
@@ -617,6 +627,7 @@ int main()
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         view = camera.GetViewMatrix();
+        /*
         light.position = camera.GetPosition();
         glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
         light.direction = camera.GetDirection();
@@ -630,7 +641,7 @@ int main()
         
         glUniform1f(timeUniform, time);
         glUniform1f(zoomUniform, imageSwap);
-        
+        */
         // Draws
         /*for (unsigned int i = 0; i < 10; i++)
         {
@@ -670,6 +681,7 @@ int main()
         glfwPollEvents();
     }
     
+    // Statistics
     std::cout << "Average fps: " << Frames / glfwGetTime() << std::endl;
     
     glfwDestroyWindow(window);

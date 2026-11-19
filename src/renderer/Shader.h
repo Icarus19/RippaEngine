@@ -2,6 +2,15 @@
 
 #include <glad/glad.h>
 #include <string>
+#include <vector>
+#include <filesystem>
+
+
+struct ShaderSource
+{
+    std::string source;
+    std::vector<std::filesystem::path> sourceFiles;
+};
 
 class Shader
 {
@@ -15,4 +24,5 @@ public:
 private:
     unsigned int m_id;
     GLenum m_type;
+    ShaderSource m_shaderSource;
 };

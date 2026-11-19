@@ -3,33 +3,32 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <assets/ShaderLibrary.h>
 
-#include "assets/ShaderLibrary.h"
 
 // TODO: Parse strings for #include files and only include asked for classes
 Shader::Shader(const char* path, GLenum type)
 {
-    std::string shaderSource = ShaderLibrary::LoadShaderSource(path);
-    const std::string& shaderHelper = ShaderLibrary::GetSource();
-    const char* shaderPointer[] = {
-        shaderSource.c_str(),
-        shaderHelper.c_str()
-    };
+    ShaderSource shaderSource = ShaderLibrary::LoadShaderSource(path);
+    
+    const char* shaderPointer = shaderSource.source.c_str();
     
     m_id = glCreateShader(type);
     m_type = type;
     
-    glShaderSource(m_id, 2, shaderPointer, NULL);
+    glShaderSource(m_id, 1, &shaderPointer, NULL);
     glCompileShader(m_id);
     
     int success;
-    char infoLog[512];
+    int logLength;
 
     glGetShaderiv(m_id, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &logLength);
 
     if (!success)
     {
-        glGetShaderInfoLog(m_id, 512, nullptr, infoLog);
+        std::string infoLog(logLength, '\0');
+        glGetShaderInfoLog(m_id, logLength, nullptr, infoLog.data());
         std::cerr << "Shader compilation failed:\n"
                   << infoLog << '\n';
     }
