@@ -1,3 +1,5 @@
+#extension GL_ARB_bindless_texture : require
+
 struct Vertex {
     vec4 position;
     vec4 normal;
@@ -21,6 +23,10 @@ layout(std430, binding = 1) readonly buffer IndexBuffer { uint indices[]; };
 layout(std430, binding = 2) readonly buffer NodeBuffer { BVHNode nodes[]; };
 layout(std430, binding = 3) readonly buffer TriMaterials { uint triMaterials[]; };
 layout(std430, binding = 4) readonly buffer Materials { GPUMaterial materials[]; };
+
+uniform mat4 inverseProjection;
+uniform mat4 inverseView;
+uniform float time;
 
 struct Hit {
     float t;

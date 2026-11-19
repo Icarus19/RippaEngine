@@ -255,211 +255,10 @@ int main()
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
 
-    // TODO: Remove
-    // TEMP: vertex data and indices this makes a square
-    // We will use 3 attributes, position, normals and texcoord
-    float pVertices[] = {
-        -0.5f, -0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
-         0.5f, -0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
-         0.5f,  0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
-        -0.5f,  0.5f,  0.0f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-    };
-    unsigned int pIndices[] = {
-        0, 1, 2,
-        2, 3, 0,
-    };
-    // TEMP: this is just one triangle
-    float tVertices[] = {
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
-        0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f,
-    };
-    unsigned int tIndices[] = {
-        0, 1, 2,
-     };
-    // TEMP: Box
-    float cVertices[] = {
-        // Position             Normal              TexCoord
-        // Front
-        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-  
-        // Back
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
-
-        // Left
-        -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-  
-        // Right
-         0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
- 
-        // Top
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
-    
-        // Bottom
-        -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
-    };
-    unsigned int cIndices[] = {
-        // Front
-        0, 1, 2,        2, 3, 0,
-        // Back 
-        4, 7, 6,        6, 5, 4,
-        // Left 
-        8, 9, 10,       10, 11, 8,
-        // Right    
-        12, 13, 14,     14, 15, 12,
-        // Top  
-        16, 17, 18,     18, 19, 16,
-        // Bottom   
-        20, 21, 22,     22, 23, 20,
-    };
-    
-    // Multiple object positions
-    glm::vec3 oPositions[] = {
-        glm::vec3( 0.0f, 0.0f, 0.0f),
-        glm::vec3( 2.0f, 5.0f, -15.0f),
-        glm::vec3( -1.5f, -2.2f, -2.5f),
-        glm::vec3( -3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3( -1.7f, 3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f, 2.0f, -2.5f),
-        glm::vec3( 1.5f, 0.2f, -1.5f),
-        glm::vec3( -1.3f, 1.0f, -1.5f),
-    };
-    
-    /*Mesh plane(pVertices, sizeof(pVertices), pIndices, std::size(pIndices));
-    Mesh triangle(tVertices, sizeof(tVertices), tIndices, std::size(tIndices));
-    Mesh cube(cVertices, sizeof(cVertices), cIndices, std::size(cIndices));
-    Mesh* meshes[11] = { &cube, &plane, &cube, &triangle, &cube, &triangle, &cube, &plane, &cube, &triangle, &cube };
-    std::mt19937 rng(std::random_device{}());
-    std::ranges::shuffle(meshes, rng);
-    */
-    //Texture texture;
-    //texture.Bind(0);
     Texture texture("./assets/default16bit.png");
     // Set second texture as uniform because the first one is automatic
     glUseProgram(shaderProgram); // Set shader before any uniforms are set
-    // Static uniforms can be bound to a program before the loop
-    // Changing program doesn't unbind any uniforms so we can change freely
-    //glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
-    //glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
-    /*
-    // Let there be light
-    Light light{
-        .position = camera.GetPosition(), // lets use camera position for light
-        .direction = camera.GetDirection(),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        
-        .intensity = 12.0f,
-        .cutoff = glm::cos(glm::radians(18.0f)), // TODO: make gradual
-        .outerCutoff = glm::cos(glm::radians(75.0f)),
-        .constant = 1.0f,
-        .linear = 0.0009f,
-        .quadratic = 0.00032f
-    };
-    Light light1{
-        .position = glm::vec3(2.5f, 5.0f, 2.5f),
-        .direction = glm::vec3(1.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.005f, 0.005f, 0.005f),
-        .diffuse = glm::vec3(1.0f, 0.98f, 0.96f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        
-        .intensity = 6.0f,
-        .cutoff = glm::cos(glm::radians(12.5f)), // TODO: make gradual
-        .outerCutoff = glm::cos(glm::radians(25.0f)),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f
-    };
     
-    // Matrices uniforms
-    int modelUniform = glGetUniformLocation(shaderProgram, "model");
-    int viewUniform = glGetUniformLocation(shaderProgram, "view");
-    int projectionUniform = glGetUniformLocation(shaderProgram, "projection");
-    int cameraUniform = glGetUniformLocation(shaderProgram, "viewPosition");
-    
-    int timeUniform = glGetUniformLocation(shaderProgram, "time");
-    int zoomUniform = glGetUniformLocation(shaderProgram, "zoom");
-    
-    // Light
-    int lightPositionUniform = glGetUniformLocation(shaderProgram, "lights[0].position");
-    glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
-    int lightDirectionUniform = glGetUniformLocation(shaderProgram, "lights[0].direction");
-    glUniform3fv(lightDirectionUniform, 1, glm::value_ptr(light.direction));
-    int lightAmbientUniform = glGetUniformLocation(shaderProgram, "lights[0].ambient");
-    glUniform3fv(lightAmbientUniform, 1, glm::value_ptr(light.ambient));
-    int lightDiffuseUniform = glGetUniformLocation(shaderProgram, "lights[0].diffuse");
-    glUniform3fv(lightDiffuseUniform, 1, glm::value_ptr(light.diffuse));
-    int lightSpecularUniform = glGetUniformLocation(shaderProgram, "lights[0].specular");
-    glUniform3fv(lightSpecularUniform, 1, glm::value_ptr(light.specular));
-    
-    int lightIntensityUniform = glGetUniformLocation(shaderProgram, "lights[0].intensity");
-    glUniform1f(lightIntensityUniform, light.intensity);
-    int lightCutoffUniform = glGetUniformLocation(shaderProgram, "lights[0].cutoff");
-    glUniform1f(lightCutoffUniform, light.cutoff);
-    int lightOuterCutoffUniform = glGetUniformLocation(shaderProgram, "lights[0].outerCutoff");
-    glUniform1f(lightOuterCutoffUniform, light.outerCutoff);
-    int lightConstantUniform = glGetUniformLocation(shaderProgram, "lights[0].constant");
-    glUniform1f(lightConstantUniform, light.constant);
-    int lightLinearUniform = glGetUniformLocation(shaderProgram, "lights[0].linear");
-    glUniform1f(lightLinearUniform, light.linear);
-    int lightQuadraticUniform = glGetUniformLocation(shaderProgram, "lights[0].quadratic");
-    glUniform1f(lightQuadraticUniform, light.quadratic);
-    
-    // light1
-    int light1PositionUniform = glGetUniformLocation(shaderProgram, "lights[1].position");
-    glUniform3fv(light1PositionUniform, 1, glm::value_ptr(light1.position));
-    int light1DirectionUniform = glGetUniformLocation(shaderProgram, "lights[1].direction");
-    glUniform3fv(light1DirectionUniform, 1, glm::value_ptr(light1.direction));
-    int light1AmbientUniform = glGetUniformLocation(shaderProgram, "lights[1].ambient");
-    glUniform3fv(light1AmbientUniform, 1, glm::value_ptr(light1.ambient));
-    int light1DiffuseUniform = glGetUniformLocation(shaderProgram, "lights[1].diffuse");
-    glUniform3fv(light1DiffuseUniform, 1, glm::value_ptr(light1.diffuse));
-    int light1SpecularUniform = glGetUniformLocation(shaderProgram, "lights[1].specular");
-    glUniform3fv(light1SpecularUniform, 1, glm::value_ptr(light1.specular));
-    
-    int light1IntensityUniform = glGetUniformLocation(shaderProgram, "lights[1].intensity");
-    glUniform1f(light1IntensityUniform, light1.intensity);
-    int light1CutoffUniform = glGetUniformLocation(shaderProgram, "lights[1].cutoff");
-    glUniform1f(light1CutoffUniform, light1.cutoff);
-    int light1OuterCutoffUniform = glGetUniformLocation(shaderProgram, "lights[1].outerCutoff");
-    glUniform1f(light1OuterCutoffUniform, light1.outerCutoff);
-    int light1ConstantUniform = glGetUniformLocation(shaderProgram, "lights[1].constant");
-    glUniform1f(light1ConstantUniform, light1.constant);
-    int light1LinearUniform = glGetUniformLocation(shaderProgram, "lights[1].linear");
-    glUniform1f(light1LinearUniform, light1.linear);
-    int light1QuadraticUniform = glGetUniformLocation(shaderProgram, "lights[1].quadratic");
-    glUniform1f(light1QuadraticUniform, light1.quadratic);
-    
-    // Material
-    int materialDiffuseUniform = glGetUniformLocation(shaderProgram, "material.diffuse");
-    glUniform1i(materialDiffuseUniform, 0);
-    texture.Bind(0);
-    int materialSpecularUniform = glGetUniformLocation(shaderProgram, "material.specular");
-    glUniform3fv(materialSpecularUniform, 1, glm::value_ptr(glm::vec3(0.5f)));
-    int materialShininessUniform = glGetUniformLocation(shaderProgram, "material.shininess");
-    glUniform1f(materialShininessUniform, 32.0f);
-    */
     unsigned int raytraceProgram = glCreateProgram();
     Shader raytraceVertexShader("./shaders/vertex/raytracevertexshader.glsl", GL_VERTEX_SHADER);
     Shader raytraceFragmentShader("./shaders/fragments/raytracefragmentshader.glsl", GL_FRAGMENT_SHADER);
@@ -472,10 +271,6 @@ int main()
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-    glUseProgram(raytraceProgram);
-    
-    int raytraceProjectionUniform = glGetUniformLocation(raytraceProgram, "inverseProjection");
-    int raytraceViewUniform = glGetUniformLocation(raytraceProgram, "inverseView");
     
     // Matrix spaces
     glm::mat4 model = glm::mat4(1.0f);
@@ -493,6 +288,28 @@ int main()
     }
     
     std::cout << std::endl;
+    
+    //glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
+    // Generate new texture for output
+    unsigned int rcTexture;
+    glCreateTextures(GL_TEXTURE_2D, 1, &rcTexture);
+    glTextureStorage2D(rcTexture, 1, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT);
+    glTextureParameteri(rcTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(rcTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glBindImageTexture(0, rcTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+    
+    glUseProgram(raytraceProgram);
+    glBindTextureUnit(0, rcTexture);
+    
+    
+    // Radiance Cascades Compute shader
+    unsigned int rcProgram = glCreateProgram();
+    Shader rcShader("./shaders/computes/raytrace.glsl", GL_COMPUTE_SHADER);
+    glAttachShader(rcProgram, rcShader.GetId());
+    glLinkProgram(rcProgram);
+    glUseProgram(rcProgram);
+    
+    
     // Optimize raytrace with BVH
     BVH bvh(gpuVertices, gpuIndices, gpuTriMaterials);
     
@@ -549,6 +366,11 @@ int main()
     );
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, matSSBO);
     
+    int rcProjectionUniform = glGetUniformLocation(rcProgram, "inverseProjection");
+    int rcViewUniform = glGetUniformLocation(rcProgram, "inverseView");
+    int BVHTimeUniform = glGetUniformLocation(rcProgram, "time");
+    
+    
     // Get wiremesh for bvh debugging
     unsigned int wireMeshProgram = glCreateProgram();
     Shader BVHvertexShader("./shaders/vertex/bvhvertexshader.glsl", GL_VERTEX_SHADER);
@@ -576,26 +398,12 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glBindVertexArray(0);
     
-    
-    // TODO: Can be repeated at runtime when depth changes
     std::vector<glm::vec3> wireMesh = bvh.GetBoxLines(debugDepth);
     glBindBuffer(GL_ARRAY_BUFFER, wireMeshVBO);
     glBufferData(GL_ARRAY_BUFFER, wireMesh.size() * sizeof(glm::vec3), wireMesh.data(), GL_DYNAMIC_DRAW);
     int wireMeshCount = (GLsizei)(wireMesh.size());
     
     int BVHViewProjectionUniform = glGetUniformLocation(wireMeshProgram, "viewProjection");
-    int BVHTimeUniform = glGetUniformLocation(raytraceProgram, "time");
-    //glUniform1i(glGetUniformLocation(wireMeshProgram, "albedoMap"), 0);
-    
-    // Radiance Cascades Compute shader
-    unsigned int rcProgram = glCreateProgram();
-    Shader rcShader("./shaders/computes/radiancecascades.glsl", GL_COMPUTE_SHADER);
-    glAttachShader(rcProgram, rcShader.GetId());
-    glLinkProgram(rcProgram);
-    
-    glUseProgram(rcProgram);
-    glDispatchCompute(8, 8, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     
     
     // Static translations and rotations
@@ -610,7 +418,7 @@ int main()
         lastFrame = time;
         Frames++;
         
-        glUseProgram(raytraceProgram);
+        glUseProgram(rcProgram);
         
         // input
         input.ProcessKeyboard(deltaTime);
@@ -627,44 +435,18 @@ int main()
         // update matrix
         //model = glm::rotate(model, time * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         view = camera.GetViewMatrix();
-        /*
-        light.position = camera.GetPosition();
-        glUniform3fv(lightPositionUniform, 1, glm::value_ptr(light.position));
-        light.direction = camera.GetDirection();
-        glUniform3fv(lightDirectionUniform, 1, glm::value_ptr(light.direction));
         
-        // update uniforms
-        glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(viewUniform, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projectionUniform, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniform3fv(cameraUniform, 1, glm::value_ptr(camera.GetPosition()));
-        
-        glUniform1f(timeUniform, time);
-        glUniform1f(zoomUniform, imageSwap);
-        */
-        // Draws
-        /*for (unsigned int i = 0; i < 10; i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, oPositions[i]);
-            float angle = 60.0f * i + time * 50.0f;
-            
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(model));
-            //texture.Bind(0);
-            meshes[i]->Draw();
-        }*/
-        /*model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(5.0f, 5.0f, 5.0f));
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        for (unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw();
-        */
-        // Enable depth
-        glEnable(GL_DEPTH_TEST);
-        glUniformMatrix4fv(raytraceProjectionUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(projection)));
-        glUniformMatrix4fv(raytraceViewUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(view)));
+        glUniformMatrix4fv(rcProjectionUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(projection)));
+        glUniformMatrix4fv(rcViewUniform, 1, GL_FALSE, glm::value_ptr(glm::inverse(view)));
         glUniform1f(BVHTimeUniform, time);
+        
+        glDispatchCompute((SCR_WIDTH + 7) / 8, (SCR_HEIGHT + 7) / 8, 1);
+        glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+        
+        
+        glUseProgram(raytraceProgram);
+        glEnable(GL_DEPTH_TEST);
+        glBindTextureUnit(0, rcTexture);
         raytraceMesh.Draw();
         
         // Draw Debug
