@@ -4,28 +4,71 @@
 #include "/includes/lighting.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
-layout(rgba16f, binding = 0) uniform image2D image;
+layout(rgba16f, binding = 0) uniform writeonly image2D image;
+
+uniform mat4 inverseProjection;
+uniform mat4 inverseView;
+uniform sampler3D cascade0;
+uniform vec3 gridOrigin;
+uniform float spacing0;
+uniform ivec3 probeCount0;
+uniform int tile0;
+
+
+vec3 probeIrradiance(ivec3 p, vec3 n)
+{
+    p = clamp(p, ivec3(0), probeCount0 - 1);
+    vec3 sum = vec3(0.0);
+    int dirCount = tile0 * tile0;
+    for (int y = 0; y < tile0; y++)
+        for (int x = 0; x < tile0; x++)
+        {
+            vec3 d = octDecode((vec2(x, y) + 0.5) / float(tile0));
+            sum += texelFetch(cascade0, ivec3(p.xy * tile0 + ivec2(x, y), p.z), 0).rgb * max(dot(n, d), 0.0);
+        }
+    return sum * (4.0 / float(dirCount));
+}
+
+vec3 sampleIndirect(vec3 pos, vec3 n)
+{
+    vec3 g = (pos + n * spacing0 * 0.5 - gridOrigin) / spacing0 - 0.5;   // nudge off the surface
+    ivec3 g0 = ivec3(floor(g));
+    vec3 f = g - vec3(g0);
+    vec3 acc = vec3(0.0);
+    for (int k = 0; k < 8; k++)
+    {
+        ivec3 o = ivec3(k & 1, (k >> 1) & 1, (k >> 2) & 1);
+        vec3 wv = mix(1.0 - f, f, vec3(o));
+        acc += wv.x * wv.y * wv.z * probeIrradiance(g0 + o, n);
+    }
+    return acc;
+}
 
 void main()
 {
-    vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
-
     ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(image);
     if(pix.x >= size.x || pix.y >= size.y)
         return;
 
-    vec2 vTexCoords = (vec2(pix) + 0.5) / vec2(size);
-    vec2 ndc = vTexCoords * 2.0 - 1.0;
+    // Camera ray
+    vec2 ndc = ((vec2(pix) + 0.5) / vec2(size)) * 2.0 - 1.0;
     vec4 p = inverseProjection * vec4(ndc, 1.0, 1.0);
-    vec3 dirView = normalize(p.xyz / p.w);
-    vec3 dir = normalize((inverseView * vec4(dirView, 0.0)).xyz);
+    vec3 dir = normalize((inverseView * vec4(normalize(p.xyz / p.w), 0.0)).xyz);
     vec3 origin = (inverseView * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-    
+  
     Hit h;
-    if(!intersectScene(origin, dir, 1e30, false, h))
+    bool hit = intersectScene(origin, dir, 1e30, false, h);
+
+    float tLight;
+    if(hitLightSphere(origin, dir, hit ? h.t : 1e30, tLight))
     {
-        color = vec4(0.0, 0.0, 0.0, 1.0);
+        imageStore(image, pix, vec4(LIGHT_COLOR, 1.0));
+        return;
+    }
+    if(!hit)
+    {
+        imageStore(image, pix, vec4(SKY_COLOR, 1.0));
         return;
     }
 
@@ -34,14 +77,14 @@ void main()
     Vertex c = vertices[indices[3u*h.tri + 2u]];
     float w = 1.0 - h.u - h.v;
     GPUMaterial mat = materials[triMaterials[h.tri]];
-    float lod = log2(max(h.t * 0.025, 1.0));
+    float lod = log2(max(h.t * 0.25, 1.0));
 
+    vec2 uv = w * a.texCoord.xy + h.u * b.texCoord.xy + h.v * c.texCoord.xy;
     vec3 dp1 = b.position.xyz - a.position.xyz;
     vec3 dp2 = c.position.xyz - a.position.xyz;
     vec3 ng = normalize(cross(dp1, dp2));
     vec3 n = w * a.normal.xyz + h.u * b.normal.xyz + h.v * c.normal.xyz;
     n = (dot(n, n) < 1e-8) ? ng : normalize(n);
-    vec2 uv = w * a.texCoord.xy + h.u * b.texCoord.xy + h.v * c.texCoord.xy;
     if(dot(ng, dir) > 0.0) { n = -n; ng = -ng; }
 
     if(hasTexture(mat.normalTexture))
@@ -51,13 +94,11 @@ void main()
         float det = duv1.x * duv2.y - duv1.y * duv2.x;
         if(abs(det) > 1e-12)
         {
-            float r = 1.0 / det;
-            vec3 T = (dp1 * duv2.y - dp2 * duv1.y) * r;
-            vec3 B = (dp2 * duv1.y - dp1 * duv2.y) * r;
+            vec3 T = normalize((dp1 * duv2.y - dp2 * duv1.y) / det);
             T = normalize(T - n * dot(n, T));
-            if(dot(cross(n, T), B) < 0.0) B = -cross(n, T); else B = cross(n, T);
+            vec3 B = cross(n, T);
             vec3 tn = textureLod(sampler2D(mat.normalTexture), uv, lod).rgb * 2.0 - 1.0;
-            n - normalize(T * tn.x + B * tn.y + n * tn.z);
+            n = normalize(T * tn.x + B * tn.y + n * tn.z);
         }
     }
 
@@ -65,41 +106,31 @@ void main()
     if(mat.albedoTexture != uvec2(0))
         albedo *= textureLod(sampler2D(mat.albedoTexture), uv, lod).rgb;
 
+	/*
     float specStrength = 0.0;
     if(hasTexture(mat.specularTexture))
         specStrength = textureLod(sampler2D(mat.specularTexture), uv, lod).r;
 
     float roughness = clamp(mat.roughness, 0.05, 1.0);
+	*/
 
-    // Light only exists on the shader for now
-    // Directional light
     vec3 position = origin + dir * h.t;
-    float angle = time * (6.28318530718 / 60.0);
+    vec3 direct = directLighting(position, n, ng);
+    vec3 indirect = sampleIndirect(position, n);
 
-    vec3 lightDir = normalize(vec3(cos(angle), -0.6, sin(angle)));
-    vec3 L = -lightDir;
-    float dist = 10000.0;
-    float ndotl = max(dot(n, L), 0.0);
-    float attenuation = 1.0;
-    // Spot light
-    /*vec3 toLight = vec3(-2.0, 5.0, -2.0) - position;
-    float dist = length(toLight);
-    vec3 L = toLight / dist;
-    float ndotl = max(dot(n, L), 0.0);
-    float attenuation = 1.0 / (1.0 + 0.02 * dist + 0.001 * (dist * dist));
-    */
-    Hit sh;
-    bool shadowed = intersectScene(position + n * 1e-3, L, dist, true, sh);
-    float shininess = 2.0 / (roughness * roughness) - 2.0;
-    float spec = pow(max(dot(n, L), 0.0), shininess) * specStrength * step(0.0, ndotl);
-
-    vec3 diffuse = albedo * ndotl;
-    vec3 lit = shadowed ? vec3(0.0) : vec3(0.87) * (diffuse + spec) / attenuation;
-    vec3 ambient = vec3(0.01);
-
-    //color = vec4(albedo * (ambient + lit), 1.0);
-    //color = vec4(n * 0.5 + 0.5, 1.0);
+    vec3 result = albedo * (direct + indirect);
+    if (pix.x < imageSize(image).x / 2)
+    {
+        if(pix.y < imageSize(image).y / 2)
+            result = direct;
+        else
+            result = albedo;
+    }   
+    else
+    {
+        if(pix.y < imageSize(image).y / 2)
+            result = indirect;
+    }
     
-    imageStore(image, pix, vec4(albedo, 1.0));
-    //imageStore(image, pix, vec4(1.0, 0.0, 0.0, 1.0));
+    imageStore(image, pix, vec4(result, 1.0));
 }

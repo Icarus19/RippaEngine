@@ -36,10 +36,12 @@ add_executable(RippaEngine
         src/renderer/Mesh.cpp
         src/renderer/Shader.cpp
         src/renderer/Material.cpp
+        src/renderer/Program.cpp
         src/assets/ImageLoader.cpp
         src/assets/MaterialLoader.cpp
         src/assets/ShaderLibrary.cpp
         src/renderer/BVH.cpp
+        src/renderer/Raytracer.cpp
 )
 
 target_include_directories(RippaEngine PRIVATE

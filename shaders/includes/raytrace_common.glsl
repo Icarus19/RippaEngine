@@ -5,17 +5,20 @@ struct Vertex {
     vec4 normal;
     vec4 texCoord;
 };
-
 struct BVHNode {
     vec3 boundsMin; uint leftFirst;
     vec3 boundsMax; uint triCount;
 };
-
 struct GPUMaterial {
     vec3 albedo; float roughness;
     vec3 emission; float metallic;
     uvec2 albedoTexture; uvec2 normalTexture;
     uvec2 specularTexture; uvec2 alphaTexture;
+};
+struct Hit {
+    float t;
+    uint tri;
+    float u, v;
 };
 
 layout(std430, binding = 0) readonly buffer VertexBuffer { Vertex vertices[]; };
@@ -24,21 +27,12 @@ layout(std430, binding = 2) readonly buffer NodeBuffer { BVHNode nodes[]; };
 layout(std430, binding = 3) readonly buffer TriMaterials { uint triMaterials[]; };
 layout(std430, binding = 4) readonly buffer Materials { GPUMaterial materials[]; };
 
-uniform mat4 inverseProjection;
-uniform mat4 inverseView;
-uniform float time;
 
-struct Hit {
-    float t;
-    uint tri;
-    float u, v;
-};
-
-// Functions
 bool hasTexture(uvec2 h) 
 { 
     return h.x != 0u || h.y != 0u; 
 }
+
 
 float intersectAABB(vec3 ro, vec3 invDir, vec3 bmin, vec3 bmax, float tMax)
 {

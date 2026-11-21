@@ -11,4 +11,17 @@ Scroll to change speed
 
 Ray tracing, currently no GI and imported textures are not used
 
-![raytracetest.gif](assets/readme/raytracetest.gif)
+![raytracetest.gif](assets/readme/raytracetest.gif) 
+
+
+Four way split between \
+Albedo, Combined \
+Direct, Indirect
+
+![fourwaysplit.png](assets/readme/lightfourways.png)
+
+And only the combined light from 3d Radiance cascades \
+Performance is only about 10 fps on gtx 1070 with static scene \
+Cascades take about 12ms to compute
+
+![radiancecascades](assets/readme/radiancecascades.png)
